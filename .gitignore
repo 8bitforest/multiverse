@@ -210,3 +210,10 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.gitignore.io/api/code,rider,linux,unity,macos,windows
+
+# Supported libraries
+Mirror*
+Photon*
+Smooth Sync*
+Noble Connect*
+Match Up*
