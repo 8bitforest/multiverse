@@ -1,64 +1,38 @@
 using System.Collections;
-using System.Collections.Generic;
 using Multiverse.Common;
 using NUnit.Framework;
-using UnityEngine;
 using UnityEngine.TestTools;
-using Object = UnityEngine.Object;
 
 namespace Tests.CommonPlayModeTests
 {
-    public abstract class MatchmakerTests
+    public abstract class MatchmakerTests : MultiverseTestFixture
     {
-        private HashSet<GameObject> _objects;
-        private MvNetworkManager _networkManager;
-
-        [SetUp]
-        public void SetUp()
+        protected override IEnumerator UnityOneTimeSetUp()
         {
-            _objects = new HashSet<GameObject>();
-
-            var go = new GameObject("Test Network Manager");
-            _objects.Add(go);
-
-            AddLibrary(go);
-            _networkManager = go.AddComponent<MvNetworkManager>();
+            yield return new WaitForTask(NetworkManager.Matchmaker.Connect());
         }
-
-        [TearDown]
-        public void TearDown()
-        {
-            foreach (var o in _objects)
-                Object.DestroyImmediate(o);
-        }
-
-        protected abstract void AddLibrary(GameObject gameObject);
 
         [Test]
         public void MatchmakerNotNull()
         {
-            Assert.NotNull(_networkManager.Matchmaker);
+            Assert.NotNull(NetworkManager.Matchmaker);
         }
-        
+
+        [Test]
+        public void MatchmakerConnected()
+        {
+            Assert.True(NetworkManager.Matchmaker.Connected);
+        }
+
         [UnityTest]
-        public IEnumerator MatchmakerConnects()
+        public IEnumerator MatchmakerDisconnectsConnects()
         {
             yield return new WaitForTask(async () =>
             {
-                await _networkManager.Matchmaker.Connect();
-                Assert.True(_networkManager.Matchmaker.Connected);
-            });
-        }
-        
-        [UnityTest]
-        public IEnumerator MatchmakerDisconnects()
-        {
-            yield return new WaitForTask(async () =>
-            {
-                await _networkManager.Matchmaker.Connect();
-                Assert.True(_networkManager.Matchmaker.Connected);
-                await _networkManager.Matchmaker.Disconnect();
-                Assert.False(_networkManager.Matchmaker.Connected);
+                await NetworkManager.Matchmaker.Disconnect();
+                Assert.False(NetworkManager.Matchmaker.Connected);
+                await NetworkManager.Matchmaker.Connect();
+                Assert.True(NetworkManager.Matchmaker.Connected);
             });
         }
     }

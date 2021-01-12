@@ -4,5 +4,6 @@ namespace Multiverse.Common
     {
         public string Name { get; }
         public string Id { get; }
+        public int MaxPlayers { get; }
     }
 }

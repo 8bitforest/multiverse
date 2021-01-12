@@ -12,7 +12,9 @@
     "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": true,
-    "defineConstraints": [],
+    "defineConstraints": [
+        "!MULTIVERSE_TEST_SERVER || MULTIVERSE_TEST_SERVER_PUN2"
+    ],
     "versionDefines": [],
     "noEngineReferences": false
 }
