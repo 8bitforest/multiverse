@@ -211,9 +211,18 @@ $RECYCLE.BIN/
 
 # End of https://www.gitignore.io/api/code,rider,linux,unity,macos,windows
 
+# General
+.idea
+
 # Supported libraries
-Mirror*
-Photon*
-Smooth Sync*
-Noble Connect*
-Match Up*
+/Assets/Mirror*
+/Assets/Photon*
+/Assets/Smooth Sync*
+/Assets/Noble Connect/*
+/Assets/Match Up/*
+
+# Custom assemblies
+!/Assets/Match Up
+!/Assets/Match Up/CustomMatchUp.asmdef
+!/Assets/Noble Connect
+!/Assets/Noble Connect/CustomNobleConnect.asmdef
