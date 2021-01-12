@@ -10,6 +10,7 @@ namespace Multiverse.PUN2
     public class Pun2MvMatchmaker : MonoBehaviourPunCallbacks, IMvMatchmaker
     {
         private TaskCompletionSource _connectTask;
+        private TaskCompletionSource _disconnectTask;
         private TaskCompletionSource _createMatchTask;
         private TaskCompletionSource _joinMatchTask;
         private TaskCompletionSource<IEnumerable<IMvMatch>> _getMatchListTask;
@@ -32,6 +33,22 @@ namespace Multiverse.PUN2
         {
             _connectTask?.SetResult();
             _connectTask = null;
+        }
+
+        public async Task Disconnect()
+        {
+            if (!PhotonNetwork.IsConnected)
+                return;
+            
+            _disconnectTask = new TaskCompletionSource();
+            PhotonNetwork.Disconnect();
+            await _disconnectTask.Task;
+        }
+
+        public override void OnDisconnected(DisconnectCause cause)
+        {
+            _disconnectTask?.SetResult();
+            _disconnectTask = null;
         }
 
         public async Task CreateMatch(int maxPlayers)

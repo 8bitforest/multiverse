@@ -14,8 +14,6 @@ namespace Multiverse.MirrorNoble
     {
         private Matchmaker _matchmaker;
 
-        private TaskCompletionSource _connectTask;
-
         public bool Connected => _matchmaker.IsReady;
 
         private void Awake()
@@ -28,16 +26,33 @@ namespace Multiverse.MirrorNoble
             if (_matchmaker.IsReady)
                 return;
 
-            _connectTask = new TaskCompletionSource();
-            StartCoroutine(ConnectCoroutine());
-            await _connectTask.Task;
+            var connectTask = new TaskCompletionSource();
+            StartCoroutine(ConnectCoroutine(connectTask));
+            await connectTask.Task;
         }
 
-        private IEnumerator ConnectCoroutine()
+        private IEnumerator ConnectCoroutine(TaskCompletionSource connectTask)
         {
             yield return _matchmaker.ConnectToMatchmaker();
             yield return new WaitUntilTimeout(() => _matchmaker.IsReady, 5);
-            _connectTask?.SetResult();
+            connectTask.SetResult();
+        }
+
+        public async Task Disconnect()
+        {
+            if (!_matchmaker.IsReady)
+                return;
+
+            var disconnectTask = new TaskCompletionSource();
+            StartCoroutine(DisconnectCoroutine(disconnectTask));
+            await disconnectTask.Task;
+        }
+        
+        private IEnumerator DisconnectCoroutine(TaskCompletionSource disconnectTask)
+        {
+            _matchmaker.Disconnect();
+            yield return new WaitUntilTimeout(() => !_matchmaker.IsReady, 5);
+            disconnectTask.SetResult();
         }
 
         public async Task CreateMatch(int maxClients)

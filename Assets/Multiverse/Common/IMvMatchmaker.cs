@@ -7,6 +7,7 @@ namespace Multiverse.Common
     {
         bool Connected { get; }
         Task Connect();
+        Task Disconnect();
         Task CreateMatch(int maxPlayers);
         Task JoinMatch(IMvMatch match);
         Task<IEnumerable<IMvMatch>> GetMatchList();

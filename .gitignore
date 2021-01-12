@@ -213,6 +213,7 @@ $RECYCLE.BIN/
 
 # General
 .idea
+InitTestScene*
 
 # Supported libraries
 /Assets/Mirror*

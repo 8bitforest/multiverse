@@ -49,5 +49,17 @@ namespace Tests.CommonPlayModeTests
                 Assert.True(_networkManager.Matchmaker.Connected);
             });
         }
+        
+        [UnityTest]
+        public IEnumerator MatchmakerDisconnects()
+        {
+            yield return new WaitForTask(async () =>
+            {
+                await _networkManager.Matchmaker.Connect();
+                Assert.True(_networkManager.Matchmaker.Connected);
+                await _networkManager.Matchmaker.Disconnect();
+                Assert.False(_networkManager.Matchmaker.Connected);
+            });
+        }
     }
 }
