@@ -1,0 +1,16 @@
+{
+    "name": "8BitForest.Multiverse.Runtime",
+    "rootNamespace": "Multiverse",
+    "references": [
+        "GUID:075eeeff030934055961f7a91dcb3137"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
