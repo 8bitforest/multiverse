@@ -1,7 +1,8 @@
 using System.Collections.Generic;
-using System.Threading;
+using System.Linq;
 using System.Threading.Tasks;
 using Reaction;
+using UnityEngine;
 
 namespace Multiverse
 {
@@ -10,7 +11,7 @@ namespace Multiverse
         private readonly IMvLibraryMatchmaker _matchmaker;
 
         private Task _lookForMatchesTask;
-        private bool _lookingForMatches = false;
+        private bool _lookingForMatches;
 
         public RxnSet<IMvMatch> Matches { get; }
 
@@ -18,24 +19,62 @@ namespace Multiverse
         {
             _matchmaker = matchmaker;
             Matches = new RxnSet<IMvMatch>();
-            
-            // TODO: Use events to listen for connect/disconnect/match join/match leave
         }
 
+        #region IMvLibraryMatchmaker
+
         public bool Connected => _matchmaker.Connected;
-        public Task Connect() => _matchmaker.Connect();
-        public Task Disconnect() => _matchmaker.Disconnect();
-        public Task CreateMatch(string matchName = null, int maxPlayers = int.MaxValue) =>
-            _matchmaker.CreateMatch(matchName, maxPlayers);
-        public Task JoinMatch(IMvMatch match) => _matchmaker.JoinMatch(match);
+
+        public async Task Connect()
+        {
+            await _matchmaker.Connect();
+            StartLookingForMatches();
+        }
+
+        public async Task Disconnect()
+        {
+            StopLookingForMatches();
+            await _matchmaker.Disconnect();
+        }
+
+        public async Task CreateMatch(string matchName = null, int maxPlayers = int.MaxValue)
+        {
+            StopLookingForMatches();
+            await _matchmaker.CreateMatch(matchName, maxPlayers);
+        }
+
+        public async Task JoinMatch(IMvMatch match)
+        {
+            StopLookingForMatches();
+            await _matchmaker.JoinMatch(match);
+        }
+
         public Task<IEnumerable<IMvMatch>> GetMatchList() => _matchmaker.GetMatchList();
+
+        #endregion
+
+        private void StartLookingForMatches()
+        {
+            _lookingForMatches = true;
+            _lookForMatchesTask ??= LookForMatches();
+        }
+
+        private void StopLookingForMatches()
+        {
+            _lookingForMatches = false;
+            _lookForMatchesTask = null;
+            Matches.AsOwner.Clear();
+        }
 
         private async Task LookForMatches()
         {
-            while (_lookingForMatches)
+            while (_lookingForMatches && Connected)
             {
-                // Matches = await GetMatchList();
-                Thread.Sleep(3000);
+                Debug.Log("Looking for matches...");
+                var newMatches = (await GetMatchList()).ToArray();
+                Matches.AsOwner.AddRange(newMatches.Except(Matches));
+                Matches.AsOwner.RemoveRange(Matches.Except(newMatches));
+                await Task.Delay(3000);
             }
         }
     }

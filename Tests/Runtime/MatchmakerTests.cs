@@ -34,5 +34,14 @@ namespace Multiverse.Tests
                 Assert.True(NetworkManager.Matchmaker.Connected);
             });
         }
+
+        [UnityTest]
+        public IEnumerator MatchmakerCreatesMatch()
+        {
+            yield return new WaitForTask(async () =>
+            {
+                await NetworkManager.Matchmaker.CreateMatch("MatchmakerTests", 4);
+            });
+        }
     }
 }

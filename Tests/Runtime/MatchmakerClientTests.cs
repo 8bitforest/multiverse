@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Multiverse.Tests.Extensions;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -18,15 +19,17 @@ namespace Multiverse.Tests
         {
             var libraryName = GetType().Namespace.Replace("Tests", "").Trim('.').Split('.').Last();
             var path = Path.Combine(Application.temporaryCachePath, "TestServer" + libraryName);
-            if (Application.platform == RuntimePlatform.OSXPlayer)
-                _serverProcess = Process.Start(Path.Combine(path + ".app", "Contents/MacOS/Multiverse"), "");
+            if (Application.platform == RuntimePlatform.OSXPlayer || Application.platform == RuntimePlatform.OSXEditor)
+                _serverProcess = Process.Start(Path.Combine(path + ".app", "Contents/MacOS/Multiverse"), "-batchmode");
             else
-                _serverProcess = Process.Start(path);
+                _serverProcess = Process.Start(path, "-batchmode");
         }
 
         protected override IEnumerator UnityOneTimeSetUp()
         {
             yield return new WaitForTask(NetworkManager.Matchmaker.Connect());
+            yield return new WaitUntilTimeout(() =>
+                NetworkManager.Matchmaker.Matches.Any(m => m.Name == "Test Server"), 15);
         }
 
         [OneTimeTearDown]
@@ -69,10 +72,11 @@ namespace Multiverse.Tests
         [UnityTest]
         public IEnumerator JoinsInvalidMatchThrows()
         {
+            LogAssert.ignoreFailingMessages = true;
             yield return new WaitForTask(async () =>
             {
-                var match = new DefaultMvMatch {Id = "MatchDoesntExist"};
-                await NetworkManager.Matchmaker.JoinMatch(match);
+                var match = new DefaultMvMatch {Id = "0"};
+                await AssertExtensions.ThrowsAsync<MvException>(NetworkManager.Matchmaker.JoinMatch(match));
             });
         }
 
