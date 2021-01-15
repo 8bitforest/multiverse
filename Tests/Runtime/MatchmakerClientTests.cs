@@ -1,41 +1,29 @@
 using System.Collections;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Multiverse.Tests.Extensions;
 using NUnit.Framework;
-using UnityEngine;
 using UnityEngine.TestTools;
 
 namespace Multiverse.Tests
 {
     public abstract class MatchmakerClientTests : MultiverseTestFixture
     {
-        private Process _serverProcess;
-
         [OneTimeSetUp]
         public void SetUp()
         {
-            var libraryName = GetType().Namespace.Replace("Tests", "").Trim('.').Split('.').Last();
-            var path = Path.Combine(Application.temporaryCachePath, "TestServer" + libraryName);
-            if (Application.platform == RuntimePlatform.OSXPlayer || Application.platform == RuntimePlatform.OSXEditor)
-                _serverProcess = Process.Start(Path.Combine(path + ".app", "Contents/MacOS/Multiverse"), "-batchmode");
-            else
-                _serverProcess = Process.Start(path, "-batchmode");
+            StartTestServer();
         }
 
         protected override IEnumerator UnityOneTimeSetUp()
         {
-            yield return new WaitForTask(NetworkManager.Matchmaker.Connect());
-            yield return new WaitUntilTimeout(() =>
-                NetworkManager.Matchmaker.Matches.Any(m => m.Name == "Test Server"), 15);
+            yield return WaitForTestServer();
         }
 
         [OneTimeTearDown]
         public void OneTimeTearDown()
         {
-            _serverProcess.Kill();
+            StopTestServer();
         }
 
         [UnityTest]
@@ -64,8 +52,7 @@ namespace Multiverse.Tests
             var onConnectedCalled = AssertExtensions.EventCalled(NetworkManager.OnConnected);
             yield return new WaitForTask(async () =>
             {
-                var match = await FindServerMatch();
-                await NetworkManager.Matchmaker.JoinMatch(match);
+                await JoinServerMatch();
                 Assert.True(NetworkManager.IsConnected);
                 Assert.True(NetworkManager.IsClient);
                 Assert.False(NetworkManager.IsHost);
@@ -81,6 +68,22 @@ namespace Multiverse.Tests
                 Assert.False(NetworkManager.IsHost);
             });
             yield return onDisconnectedCalled;
+            yield return WaitForTestServer();
+        }
+
+        [UnityTest]
+        public IEnumerator OnDisconnectCalled()
+        {
+            var onDisconnectedCalled = AssertExtensions.EventCalled(NetworkManager.OnDisconnected);
+            yield return new WaitForTask(async () =>
+            {
+                await JoinServerMatch();
+                StopTestServer();
+            });
+            yield return onDisconnectedCalled;
+            
+            StartTestServer();
+            yield return WaitForTestServer();
         }
 
         [UnityTest]
@@ -92,13 +95,6 @@ namespace Multiverse.Tests
                 var match = new DefaultMvMatch {Id = "0"};
                 await AssertExtensions.ThrowsAsync<MvException>(NetworkManager.Matchmaker.JoinMatch(match));
             });
-        }
-
-        private async Task<IMvMatch> FindServerMatch()
-        {
-            var matches = (await NetworkManager.Matchmaker.GetMatchList()).ToArray();
-            Assert.IsNotEmpty(matches);
-            return matches.FirstOrDefault(m => m.Name == "Test Server");
         }
     }
 }

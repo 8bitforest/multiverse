@@ -21,7 +21,7 @@ namespace Multiverse.Tests.Extensions
                 if (eventCalled)
                     Object.Destroy(go);
                 return eventCalled;
-            }, 15);
+            }, 60);
         }
 
         public static async Task ThrowsAsync<T>(Task asyncMethod) where T : Exception
