@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Reaction;
 
 namespace Multiverse
 {
@@ -7,6 +8,8 @@ namespace Multiverse
     public interface IMvLibraryMatchmaker
     {
         bool Connected { get; }
+        public RxnEvent OnDisconnected { get; }
+        
         Task Connect();
         Task Disconnect();
         Task CreateMatch(string matchName = null, int maxPlayers = int.MaxValue);

@@ -6,24 +6,25 @@ using UnityEngine;
 
 namespace Multiverse
 {
-    public class MvMatchmaker : IMvLibraryMatchmaker
+    public class MvMatchmaker
     {
+        public bool Connected => _matchmaker.Connected;
+        public RxnSet<IMvMatch> Matches { get; }
+
+        internal RxnEvent<(bool isHost, bool isClient)> OnJoinedMatch { get; }
+
         private readonly IMvLibraryMatchmaker _matchmaker;
 
         private Task _lookForMatchesTask;
         private bool _lookingForMatches;
 
-        public RxnSet<IMvMatch> Matches { get; }
-
         public MvMatchmaker(IMvLibraryMatchmaker matchmaker)
         {
             _matchmaker = matchmaker;
+            OnJoinedMatch = new RxnEvent<(bool isHost, bool isClient)>();
             Matches = new RxnSet<IMvMatch>();
         }
 
-        #region IMvLibraryMatchmaker
-
-        public bool Connected => _matchmaker.Connected;
 
         public async Task Connect()
         {
@@ -41,17 +42,17 @@ namespace Multiverse
         {
             StopLookingForMatches();
             await _matchmaker.CreateMatch(matchName, maxPlayers);
+            OnJoinedMatch.AsOwner.Invoke((true, false));
         }
 
         public async Task JoinMatch(IMvMatch match)
         {
             StopLookingForMatches();
             await _matchmaker.JoinMatch(match);
+            OnJoinedMatch.AsOwner.Invoke((false, true));
         }
 
         public Task<IEnumerable<IMvMatch>> GetMatchList() => _matchmaker.GetMatchList();
-
-        #endregion
 
         private void StartLookingForMatches()
         {

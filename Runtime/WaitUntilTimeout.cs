@@ -9,7 +9,19 @@ namespace Multiverse
         private readonly float _seconds;
         private readonly Func<bool> _predicate;
 
-        public override bool keepWaiting => !_predicate() && Time.time - _startTime < _seconds;
+        public override bool keepWaiting
+        {
+            get
+            {
+                if (_predicate())
+                    return false;
+
+                if (Time.time - _startTime < _seconds)
+                    return true;
+
+                throw new Exception("WaitUntilTimeout timed out");
+            }
+        }
 
         public WaitUntilTimeout(Func<bool> predicate, float seconds)
         {

@@ -59,14 +59,28 @@ namespace Multiverse.Tests
         }
 
         [UnityTest]
-        public IEnumerator JoinsMatch()
+        public IEnumerator JoinsLeavesMatch()
         {
+            var onConnectedCalled = AssertExtensions.EventCalled(NetworkManager.OnConnected);
             yield return new WaitForTask(async () =>
             {
                 var match = await FindServerMatch();
                 await NetworkManager.Matchmaker.JoinMatch(match);
-                // TODO: Make sure we are connected to a server
+                Assert.True(NetworkManager.IsConnected);
+                Assert.True(NetworkManager.IsClient);
+                Assert.False(NetworkManager.IsHost);
             });
+            yield return onConnectedCalled;
+
+            var onDisconnectedCalled = AssertExtensions.EventCalled(NetworkManager.OnDisconnected);
+            yield return new WaitForTask(async () =>
+            {
+                await NetworkManager.Client.Disconnect();
+                Assert.False(NetworkManager.IsConnected);
+                Assert.False(NetworkManager.IsClient);
+                Assert.False(NetworkManager.IsHost);
+            });
+            yield return onDisconnectedCalled;
         }
 
         [UnityTest]
