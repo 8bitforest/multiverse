@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace Multiverse.Tests.Scenes.Scripts
 {
-    public class TestServerLibraryAdder : MonoBehaviour
+    public class MultiverseTestsLibraryAdder : MonoBehaviour
     {
         private void Awake()
         {
@@ -17,7 +17,8 @@ namespace Multiverse.Tests.Scenes.Scripts
 
             FindObjectOfType<TMP_Text>().text += $" ({libraryName})";
             libraryAdder.AddLibrary(gameObject);
-            gameObject.AddComponent<MvNetworkManager>();
+            var nm = gameObject.AddComponent<MvNetworkManager>();
+            nm.SetTimeout(5);
         }
     }
 }

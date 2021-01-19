@@ -1,3 +1,4 @@
+using System;
 using Reaction;
 using UnityEngine;
 
@@ -7,6 +8,7 @@ namespace Multiverse
     public class MvNetworkManager : Singleton<MvNetworkManager>
     {
         public MvMatchmaker Matchmaker { get; private set; }
+        public MvHost Host { get; private set; }
         public MvServer Server { get; private set; }
         public MvClient Client { get; private set; }
 
@@ -19,6 +21,8 @@ namespace Multiverse
 
         private IMvLibrary _library;
 
+        public void SetTimeout(float seconds) => _library.SetTimeout(seconds);
+
         private void Awake()
         {
             _library = GetComponent<IMvLibrary>();
@@ -27,7 +31,7 @@ namespace Multiverse
             OnConnected = new RxnEvent();
             OnDisconnected = new RxnEvent();
         }
-
+        
         private void Connected((bool isHost, bool isClient) args)
         {
             IsConnected = true;
@@ -37,7 +41,9 @@ namespace Multiverse
             if (IsHost)
             {
                 Server = new MvServer(_library.GetServer());
-                Server.OnDisconnected.OnInvoked(gameObject, Disconnected);
+                Client = new MvClient(_library.GetClient());
+                Host = new MvHost(Server, Client);
+                Host.OnDisconnected.OnInvoked(gameObject, Disconnected);
             }
             else if (IsClient)
             {
@@ -55,8 +61,20 @@ namespace Multiverse
             IsClient = false;
             Server = null;
             Client = null;
+            Host = null;
+            Matchmaker.Disconnect();
             _library.CleanupAfterDisconnect();
             OnDisconnected.AsOwner.Invoke();
+        }
+
+        private void OnDestroy()
+        {
+            Disconnected();
+        }
+
+        private void OnApplicationQuit()
+        {
+            Disconnected();
         }
     }
 }

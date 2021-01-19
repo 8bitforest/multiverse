@@ -11,8 +11,8 @@ namespace Multiverse.Tests
 {
     public static class EditorExtensions
     {
-        [MenuItem("Multiverse/Build Test Servers")]
-        public static void BuildTestServer()
+        [MenuItem("Multiverse/Build Test Binaries")]
+        public static void BuildTestBinaries()
         {
             if (BuildPipeline.isBuildingPlayer)
                 return;
@@ -24,15 +24,15 @@ namespace Multiverse.Tests
                 .ToArray();
 
             foreach (var lib in libraries)
-                BuildTestServer(lib, lib.ToUpper());
-            
+                BuildTestBinary(lib, lib.ToUpper());
+
             foreach (var lib in libraries)
-                Debug.Log($"Built test server for library {lib}");
+                Debug.Log($"Built test binary for library {lib}");
         }
 
-        private static void BuildTestServer(string backend, string define)
+        private static void BuildTestBinary(string backend, string define)
         {
-            var path = Path.Combine(Application.temporaryCachePath, $"TestServer{backend}");
+            var path = Path.Combine(Application.temporaryCachePath, $"MultiverseTest{backend}");
             BuildPipeline.BuildPlayer(new BuildPlayerOptions
             {
                 locationPathName = path,
@@ -45,7 +45,7 @@ namespace Multiverse.Tests
                 },
                 scenes = new[]
                 {
-                    "Packages/com.eightbitforest.multiverse/Tests/Runtime/Scenes/TestServer.unity"
+                    $"Packages/com.eightbitforest.multiverse/Tests/Runtime/Scenes/MultiverseTest.unity"
                 }
             });
         }

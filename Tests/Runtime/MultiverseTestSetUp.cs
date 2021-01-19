@@ -21,7 +21,6 @@ namespace Multiverse.Tests
         public void OneTimeTearDown()
         {
             Debug.Log("Cleaning up tests");
-            MvNetworkManager.I.Matchmaker.Disconnect();
             foreach (var go in Resources.FindObjectsOfTypeAll<GameObject>())
                 if (!_originalObjects.Contains(go) && go.hideFlags == HideFlags.None && go.scene.name != null)
                     Object.DestroyImmediate(go);

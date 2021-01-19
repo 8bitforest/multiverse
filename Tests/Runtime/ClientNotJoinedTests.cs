@@ -1,29 +1,27 @@
 using System.Collections;
-using System.Linq;
-using System.Threading.Tasks;
 using Multiverse.Tests.Extensions;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 
 namespace Multiverse.Tests
 {
-    public abstract class MatchmakerClientTests : MultiverseTestFixture
+    public abstract class ClientNotJoinedTests : MultiverseTestFixture
     {
-        [OneTimeSetUp]
-        public void SetUp()
-        {
-            StartTestServer();
-        }
-
         protected override IEnumerator UnityOneTimeSetUp()
         {
+            StartTestServer();
             yield return WaitForTestServer();
         }
 
-        [OneTimeTearDown]
-        public void OneTimeTearDown()
+        [Test]
+        public void NotJoinedMatch()
         {
-            StopTestServer();
+            Assert.False(NetworkManager.IsConnected);
+            Assert.False(NetworkManager.IsClient);
+            Assert.False(NetworkManager.IsHost);
+            Assert.Null(NetworkManager.Server);
+            Assert.Null(NetworkManager.Client);
+            Assert.Null(NetworkManager.Host);
         }
 
         [UnityTest]
@@ -56,7 +54,11 @@ namespace Multiverse.Tests
                 Assert.True(NetworkManager.IsConnected);
                 Assert.True(NetworkManager.IsClient);
                 Assert.False(NetworkManager.IsHost);
+                Assert.Null(NetworkManager.Server);
+                Assert.NotNull(NetworkManager.Client);
+                Assert.Null(NetworkManager.Host);
             });
+            yield return new WaitUntilTimeout(() => NetworkManager.Client.Connections.Count == 2, 15);
             yield return onConnectedCalled;
 
             var onDisconnectedCalled = AssertExtensions.EventCalled(NetworkManager.OnDisconnected);
@@ -66,23 +68,11 @@ namespace Multiverse.Tests
                 Assert.False(NetworkManager.IsConnected);
                 Assert.False(NetworkManager.IsClient);
                 Assert.False(NetworkManager.IsHost);
+                Assert.Null(NetworkManager.Server);
+                Assert.Null(NetworkManager.Client);
+                Assert.Null(NetworkManager.Host);
             });
             yield return onDisconnectedCalled;
-            yield return WaitForTestServer();
-        }
-
-        [UnityTest]
-        public IEnumerator OnDisconnectCalled()
-        {
-            var onDisconnectedCalled = AssertExtensions.EventCalled(NetworkManager.OnDisconnected);
-            yield return new WaitForTask(async () =>
-            {
-                await JoinServerMatch();
-                StopTestServer();
-            });
-            yield return onDisconnectedCalled;
-            
-            StartTestServer();
             yield return WaitForTestServer();
         }
 

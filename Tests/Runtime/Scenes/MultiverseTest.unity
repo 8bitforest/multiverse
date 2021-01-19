@@ -132,10 +132,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 189004349}
-  - component: {fileID: 189004351}
   - component: {fileID: 189004350}
+  - component: {fileID: 189004351}
   m_Layer: 0
-  m_Name: TestServer
+  m_Name: MultiverseTest
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -176,7 +176,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 189004348}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b988e06567a544fd9ace3a84822e633b, type: 3}
+  m_Script: {fileID: 11500000, guid: 833c457625774a9c9dddbb6fdbf9a51c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
 --- !u!1 &1259604914

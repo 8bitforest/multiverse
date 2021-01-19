@@ -1,3 +1,4 @@
+using System.Threading.Tasks;
 using Reaction;
 
 namespace Multiverse
@@ -6,11 +7,6 @@ namespace Multiverse
     {
         RxnEvent OnDisconnected { get; }
         
-        void Disconnect();
-        // * OnClientConnected
-        // * OnClientDisconnected
-        // * Kick Client?
-        // * StopServer
-        // * SpawnObject
+        Task Disconnect();
     }
 }

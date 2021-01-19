@@ -12,16 +12,7 @@ namespace Multiverse.Tests.Extensions
     {
         public static IEnumerator EventCalled(RxnEvent e)
         {
-            var go = new GameObject("Assert.EventCalled");
-            var eventCalled = false;
-            e.OnInvoked(go, () => eventCalled = true);
-
-            return new WaitUntilTimeout(() =>
-            {
-                if (eventCalled)
-                    Object.Destroy(go);
-                return eventCalled;
-            }, 60);
+            return new WaitForTask(e.Wait(60));
         }
 
         public static async Task ThrowsAsync<T>(Task asyncMethod) where T : Exception
@@ -33,26 +24,16 @@ namespace Multiverse.Tests.Extensions
         {
             try
             {
-                await asyncMethod; //Should throw..
+                await asyncMethod;
             }
             catch (T)
             {
-                //Ok! Swallow the exception.
                 return;
             }
             catch (Exception e)
             {
-                if (message != "")
-                {
-                    Assert.That(e, Is.TypeOf<T>(),
-                        message + " " + e.ToString()); //of course this fail because it goes through the first catch..
-                }
-                else
-                {
-                    Assert.That(e, Is.TypeOf<T>(), e.ToString());
-                }
-
-                throw; //probably unreachable
+                Assert.That(e, Is.TypeOf<T>(), message != "" ? $"{message} {e}" : e.ToString());
+                throw;
             }
 
             Assert.Fail("Expected an exception of type " + typeof(T).FullName + " but no exception was thrown.");

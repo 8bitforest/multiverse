@@ -5,6 +5,7 @@ namespace Multiverse
 {
     public class MvServer
     {
+        public bool Connected { get; private set; } = true;
         public RxnEvent OnDisconnected { get; }
 
         private readonly IMvLibraryServer _server;
@@ -13,13 +14,9 @@ namespace Multiverse
         {
             _server = server;
             OnDisconnected = _server.OnDisconnected;
+            OnDisconnected.OnInvoked(null, () => Connected = false);
         }
 
-        public async Task Disconnect()
-        {
-            var t = OnDisconnected.Wait(Multiverse.Timeout);
-            _server.Disconnect();
-            await t;
-        }
+        public async Task Disconnect() => await _server.Disconnect();
     }
 }

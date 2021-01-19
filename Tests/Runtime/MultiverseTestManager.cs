@@ -13,19 +13,15 @@ namespace Multiverse.Tests
             _adder = adder;
         }
 
-        public void DisconnectAndReset()
+        public void AddNetworkLibrary()
         {
             if (_libraryGameObject)
                 DestroyImmediate(_libraryGameObject);
 
             _libraryGameObject = new GameObject("Network Library");
             _adder.AddLibrary(_libraryGameObject);
-            _libraryGameObject.AddComponent<MvNetworkManager>();
-        }
-        
-        public void LeaveMatchAndReset()
-        {
-            // TODO
+            var nm = _libraryGameObject.AddComponent<MvNetworkManager>();
+            nm.SetTimeout(5);
         }
     }
 

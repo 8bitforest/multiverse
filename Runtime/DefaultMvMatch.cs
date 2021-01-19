@@ -6,7 +6,7 @@ namespace Multiverse
         public string Id { get; set; }
         public int MaxPlayers { get; set; }
 
-        protected bool Equals(DefaultMvMatch other)
+        private bool Equals(DefaultMvMatch other)
         {
             return Name == other.Name && Id == other.Id && MaxPlayers == other.MaxPlayers;
         }

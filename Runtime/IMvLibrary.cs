@@ -6,5 +6,6 @@ namespace Multiverse
         IMvLibraryClient GetClient();
         IMvLibraryMatchmaker GetMatchmaker();
         void CleanupAfterDisconnect();
+        void SetTimeout(float seconds);
     }
 }

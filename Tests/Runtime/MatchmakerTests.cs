@@ -1,4 +1,5 @@
 using System.Collections;
+using Multiverse.Tests.Extensions;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 
@@ -26,21 +27,12 @@ namespace Multiverse.Tests
         [UnityTest]
         public IEnumerator MatchmakerDisconnectsConnects()
         {
-            yield return new WaitForTask(async () =>
+                yield return new WaitForTask(async () =>
             {
                 await NetworkManager.Matchmaker.Disconnect();
                 Assert.False(NetworkManager.Matchmaker.Connected);
                 await NetworkManager.Matchmaker.Connect();
                 Assert.True(NetworkManager.Matchmaker.Connected);
-            });
-        }
-
-        [UnityTest]
-        public IEnumerator MatchmakerCreatesMatch()
-        {
-            yield return new WaitForTask(async () =>
-            {
-                await NetworkManager.Matchmaker.CreateMatch("MatchmakerTests", 4);
             });
         }
     }

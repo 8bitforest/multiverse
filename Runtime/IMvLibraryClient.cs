@@ -1,17 +1,15 @@
+using System.Threading.Tasks;
 using Reaction;
 
 namespace Multiverse
 {
     public interface IMvLibraryClient
     {
-        RxnEvent OnDisconnected { get; }
-        
-        void Disconnect();
+        IMvConnection LocalConnection { get; }
+        RxnSet<IMvConnection> Connections { get; }
 
-        // * DisconnectFromServer
-        // * OnServerConnected
-        // * OnServerDisconnected
-        // * OnOtherClientJoined?
-        // * OnOtherClientLeft?
+        RxnEvent OnDisconnected { get; }
+
+        Task Disconnect();
     }
 }
