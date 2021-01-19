@@ -141,7 +141,7 @@ namespace Multiverse.Tests
             await NetworkManager.Matchmaker.JoinMatch(match);
         }
 
-        protected async Task<IMvMatch> FindServerMatch()
+        protected async Task<MvMatch> FindServerMatch()
         {
             var matches = (await NetworkManager.Matchmaker.GetMatchList()).ToArray();
             Assert.IsNotEmpty(matches);

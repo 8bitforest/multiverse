@@ -1,12 +1,19 @@
 namespace Multiverse
 {
-    public class DefaultMvMatch : IMvMatch
+    public class MvMatch
     {
-        public string Name { get; set; }
-        public string Id { get; set; }
-        public int MaxPlayers { get; set; }
+        public string Name { get; private set; }
+        public string Id { get; private set; }
+        public int MaxPlayers { get; private set; }
 
-        private bool Equals(DefaultMvMatch other)
+        public MvMatch(string name, string id, int maxPlayers)
+        {
+            Name = name;
+            Id = id;
+            MaxPlayers = maxPlayers;
+        }
+
+        private bool Equals(MvMatch other)
         {
             return Name == other.Name && Id == other.Id && MaxPlayers == other.MaxPlayers;
         }
@@ -16,7 +23,7 @@ namespace Multiverse
             if (ReferenceEquals(null, obj)) return false;
             if (ReferenceEquals(this, obj)) return true;
             if (obj.GetType() != GetType()) return false;
-            return Equals((DefaultMvMatch) obj);
+            return Equals((MvMatch) obj);
         }
 
         public override int GetHashCode()

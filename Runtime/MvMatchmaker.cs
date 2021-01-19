@@ -9,7 +9,7 @@ namespace Multiverse
     public class MvMatchmaker
     {
         public bool Connected => _matchmaker.Connected;
-        public RxnSet<IMvMatch> Matches { get; }
+        public RxnSet<MvMatch> Matches { get; }
 
         internal RxnEvent<(bool isHost, bool isClient)> OnJoinedMatch { get; }
 
@@ -22,7 +22,7 @@ namespace Multiverse
         {
             _matchmaker = matchmaker;
             OnJoinedMatch = new RxnEvent<(bool isHost, bool isClient)>();
-            Matches = new RxnSet<IMvMatch>();
+            Matches = new RxnSet<MvMatch>();
         }
 
 
@@ -45,14 +45,14 @@ namespace Multiverse
             OnJoinedMatch.AsOwner.Invoke((true, false));
         }
 
-        public async Task JoinMatch(IMvMatch match)
+        public async Task JoinMatch(MvMatch match)
         {
             StopLookingForMatches();
             await _matchmaker.JoinMatch(match);
             OnJoinedMatch.AsOwner.Invoke((false, true));
         }
 
-        public Task<IEnumerable<IMvMatch>> GetMatchList() => _matchmaker.GetMatchList();
+        public Task<IEnumerable<MvMatch>> GetMatchList() => _matchmaker.GetMatchList();
 
         private void StartLookingForMatches()
         {

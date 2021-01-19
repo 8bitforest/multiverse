@@ -5,8 +5,8 @@ namespace Multiverse
 {
     public interface IMvLibraryClient
     {
-        IMvConnection LocalConnection { get; }
-        RxnSet<IMvConnection> Connections { get; }
+       MvConnection LocalConnection { get; }
+        RxnSet<MvConnection> Connections { get; }
 
         RxnEvent OnDisconnected { get; }
 

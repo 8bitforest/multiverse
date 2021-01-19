@@ -82,7 +82,7 @@ namespace Multiverse.Tests
             LogAssert.ignoreFailingMessages = true;
             yield return new WaitForTask(async () =>
             {
-                var match = new DefaultMvMatch {Id = "0"};
+                var match = new MvMatch(null, "0", 4);
                 await AssertExtensions.ThrowsAsync<MvException>(NetworkManager.Matchmaker.JoinMatch(match));
             });
         }

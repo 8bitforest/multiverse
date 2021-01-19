@@ -13,7 +13,7 @@ namespace Multiverse
         Task Connect();
         Task Disconnect();
         Task CreateMatch(string matchName = null, int maxPlayers = int.MaxValue);
-        Task JoinMatch(IMvMatch match);
-        Task<IEnumerable<IMvMatch>> GetMatchList();
+        Task JoinMatch(MvMatch match);
+        Task<IEnumerable<MvMatch>> GetMatchList();
     }
 }

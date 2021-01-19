@@ -18,7 +18,7 @@ namespace Multiverse.Tests.Scenes.Scripts
         {
             await _networkManager.Matchmaker.Connect();
 
-            IMvMatch match = null;
+            MvMatch match = null;
             while (match == null)
             {
                 var matches = (await _networkManager.Matchmaker.GetMatchList()).ToArray();

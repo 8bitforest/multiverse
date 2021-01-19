@@ -8,11 +8,11 @@ namespace Multiverse
     public class MvClient
     {
         public bool Connected { get; private set; } = true;
-        public IMvConnection LocalConnection => _client.LocalConnection;
+        public MvConnection LocalConnection => _client.LocalConnection;
 
         public RxnEvent OnDisconnected { get; }
-        public RxnSet<IMvConnection> Connections { get; }
-        public IEnumerable<IMvConnection> OtherConnections => Connections.Where(c => !Equals(c, LocalConnection));
+        public RxnSet<MvConnection> Connections { get; }
+        public IEnumerable<MvConnection> OtherConnections => Connections.Where(c => !Equals(c, LocalConnection));
 
         private readonly IMvLibraryClient _client;
 
