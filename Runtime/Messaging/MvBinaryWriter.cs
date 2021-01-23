@@ -6,7 +6,6 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using Multiverse.Utils;
 using Unity.Collections.LowLevel.Unsafe;
-using UnityEngine;
 
 namespace Multiverse.Messaging
 {
@@ -14,11 +13,14 @@ namespace Multiverse.Messaging
     {
         public const int MaxStringLength = 1024 * 32;
 
-        private delegate void WriteMethod(MvBinaryWriter writer, object value);
+        private delegate void WriteMethod<in T>(MvBinaryWriter writer, T value);
 
-        private static readonly Dictionary<Type, WriteMethod> WriteMethods;
+        private static class WriteMethods<T>
+        {
+            internal static WriteMethod<T> WriteMethod { get; set; }
+        }
+
         private static readonly Dictionary<Type, MethodInfo> GenericExtensionMethods;
-        private static readonly Dictionary<Type, WriteMethod> NetworkMessageWriteMethods;
 
         private byte[] _buffer = new byte[2048];
         private int _position;
@@ -33,74 +35,89 @@ namespace Multiverse.Messaging
                 .Where(m => m.GetParameters().Length == 2 && m.ReturnType == typeof(void))
                 .Where(m => m.GetParameters()[0].ParameterType == typeof(MvBinaryWriter)).ToArray();
 
-            WriteMethods = extensions
-                .Where(m => !m.IsGenericMethod)
-                .ToDictionary(m => m.GetParameters()[1].ParameterType, CreateWriteMethod);
+            // Register all non-generic extensions
+            foreach (var m in extensions.Where(m => !m.IsGenericMethod))
+            {
+                typeof(MvBinaryWriter).GetMethod(nameof(RegisterWriteMethod),
+                        BindingFlags.NonPublic | BindingFlags.Static)!
+                    .MakeGenericMethod(m.GetParameters()[1].ParameterType)
+                    .Invoke(null, new object[] {m});
+            }
 
             GenericExtensionMethods = extensions
                 .Where(m => m.IsGenericMethod)
                 .ToDictionary(m => ReflectionUtils.GetGenericTypeDefinition(m.GetParameters()[1].ParameterType));
-
-            NetworkMessageWriteMethods = new Dictionary<Type, WriteMethod>();
-
-            Debug.Log($"Registered {WriteMethods.Count} MvBinaryWriter methods");
         }
 
-        private static WriteMethod FindWriteMethodForType<T>()
+        private static WriteMethod<T> RegisterWriteMethod<T>(MethodInfo extensionMethod = null)
         {
-            return FindWriteMethodForType(typeof(T));
-        }
-
-        private static WriteMethod FindWriteMethodForType(Type type)
-        {
-            if (WriteMethods.ContainsKey(type))
-                return WriteMethods[type];
-
-            Debug.LogWarning($"Type {type} doesn't have a write method yet! Making one...");
-
+            var type = typeof(T);
+            if (extensionMethod != null)
+                return WriteMethods<T>.WriteMethod = CreateWriteMethod<T>(extensionMethod);
+            if (typeof(IMvNetworkMessage).IsAssignableFrom(type))
+                return WriteMethods<T>.WriteMethod = CreateWriteClass<T>();
             if (GenericExtensionMethods.ContainsKey(ReflectionUtils.GetGenericTypeDefinition(type)))
-            {
-                var method = GenericExtensionMethods[ReflectionUtils.GetGenericTypeDefinition(type)];
-                WriteMethods[type] = CreateWriteMethod(method, type);
-                return WriteMethods[type];
-            }
+                return WriteMethods<T>.WriteMethod =
+                    CreateWriteMethod<T>(GenericExtensionMethods[ReflectionUtils.GetGenericTypeDefinition(type)]);
 
             throw new MvException($"{type} cannot be written to MvBinaryWriter!");
         }
 
-        private static WriteMethod CreateWriteMethod(MethodInfo extensionMethod)
+        private static WriteMethod<T> CreateWriteClass<T>()
         {
-            return CreateWriteMethod(extensionMethod, extensionMethod.GetParameters()[1].ParameterType);
+            var type = typeof(T);
+            var isStruct = type.IsValueType;
+            var exps = new List<Expression>();
+
+            var fieldsProps = ReflectionUtils.GetAllFieldsProperties(type).ToArray();
+            var writeByteMethod = Expression.Constant(WriteMethods<byte>.WriteMethod);
+            var writerParam = Expression.Parameter(typeof(MvBinaryWriter));
+            var instanceParam = Expression.Parameter(typeof(T));
+
+            if (!isStruct)
+                exps.Add(Expression.Invoke(writeByteMethod, writerParam, Expression.Constant((byte) 1)));
+
+            exps.AddRange(fieldsProps.Select(fieldProp =>
+            {
+                var fpType = ReflectionUtils.GetFieldPropertyType(fieldProp);
+                var writeMethod = typeof(MvBinaryWriter).GetMethod(nameof(Write))!.MakeGenericMethod(fpType);
+                var getPropExp = Expression.PropertyOrField(instanceParam, fieldProp.Name);
+                return Expression.Call(writerParam, writeMethod, getPropExp);
+            }));
+
+            var blockExp = Expression.Block(exps);
+
+            if (isStruct)
+                return Expression.Lambda<WriteMethod<T>>(blockExp, writerParam, instanceParam).Compile();
+
+            var nullCheckExp = Expression.IfThenElse(
+                Expression.Equal(instanceParam, Expression.Constant(null, type)),
+                Expression.Invoke(writeByteMethod, writerParam, Expression.Constant((byte) 0)),
+                blockExp);
+
+            return Expression.Lambda<WriteMethod<T>>(nullCheckExp, writerParam, instanceParam).Compile();
         }
 
-        private static WriteMethod CreateWriteMethod(MethodInfo extensionMethod, Type type)
+        private static WriteMethod<T> CreateWriteMethod<T>(MethodInfo extensionMethod)
         {
-            ParameterExpression[] arguments =
-            {
-                Expression.Parameter(typeof(MvBinaryWriter)),
-                Expression.Parameter(typeof(object))
-            };
-
-            Expression[] convertedArguments =
-            {
-                arguments[0],
-                Expression.Convert(arguments[1], type)
-            };
+            var type = typeof(T);
+            ParameterExpression[] args = {Expression.Parameter(typeof(MvBinaryWriter)), Expression.Parameter(type)};
+            Expression[] convertedArgs = {args[0], args[1]};
 
             MethodCallExpression call;
             try
             {
                 call = !extensionMethod.IsGenericMethod
-                    ? Expression.Call(extensionMethod, convertedArguments)
+                    ? Expression.Call(extensionMethod, convertedArgs)
                     : Expression.Call(extensionMethod.MakeGenericMethod(ReflectionUtils.GetGenericType(type)),
-                        convertedArguments);
+                        convertedArgs);
             }
             catch (ArgumentException)
             {
                 throw new MvException($"{type} cannot be written to MvBinaryWriter!");
             }
 
-            return Expression.Lambda<WriteMethod>(call, arguments).Compile();
+            return Expression.Lambda<WriteMethod<T>>(call, args).Compile();
         }
 
         public MvBinaryWriter()
@@ -118,7 +135,7 @@ namespace Multiverse.Messaging
             _position = 0;
         }
 
-        public unsafe void WriteBlittable<T>(T value) where T : unmanaged
+        internal unsafe void WriteBlittable<T>(T value) where T : unmanaged
         {
 #if UNITY_EDITOR
             if (!UnsafeUtility.IsBlittable(typeof(T)))
@@ -134,38 +151,20 @@ namespace Multiverse.Messaging
             _position += size;
         }
 
-        public void WriteByteArray(byte[] bytes, int index, int length)
+        internal void WriteByteArray(byte[] bytes, int index, int length)
         {
             EnsureCapacity(_position + length);
             Array.Copy(bytes, index, _buffer, _position, length);
             _position += length;
         }
 
-        public void WriteNetworkMessage<T>(T value) where T : IMvNetworkMessage
-        {
-            var type = typeof(T);
-            if (!NetworkMessageWriteMethods.ContainsKey(type))
-            {
-                var fieldsProps = ReflectionUtils.GetAllFieldsProperties(type).ToArray();
-                var getters = fieldsProps.Select(ReflectionUtils.GetFieldPropertyGetter).ToArray();
-                var writeMethods = fieldsProps.Select(fp =>
-                    FindWriteMethodForType(ReflectionUtils.GetFieldPropertyType(fp))).ToArray();
-
-                void WriteMethod(MvBinaryWriter w, object obj)
-                {
-                    for (var i = 0; i < getters.Length; i++)
-                        writeMethods[i](w, getters[i](obj));
-                }
-
-                NetworkMessageWriteMethods[type] = WriteMethod;
-            }
-
-            NetworkMessageWriteMethods[type](this, value);
-        }
-
         public void Write<T>(T value)
         {
-            FindWriteMethodForType<T>()(this, value);
+            var method = WriteMethods<T>.WriteMethod;
+            if (method != null)
+                method(this, value);
+            else
+                RegisterWriteMethod<T>()(this, value);
         }
 
         private void EnsureCapacity(int capacity)

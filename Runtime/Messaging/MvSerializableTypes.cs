@@ -184,33 +184,14 @@ namespace Multiverse.Messaging
                 writer.Write(val);
         }
 
-        public static T ReadNetworkMessageClass<T>(this MvBinaryReader reader) where T : class, IMvNetworkMessage
+        public static T ReadNetworkMessage<T>(this MvBinaryReader reader) where T : IMvNetworkMessage
         {
-            return reader.ReadByte() == 0 ? null : reader.ReadNetworkMessage<T>();
+            return reader.Read<T>();
         }
 
-        public static void WriteNetworkMessageClass<T>(this MvBinaryWriter writer, T value)
-            where T : class, IMvNetworkMessage
+        public static void WriteNetworkMessage<T>(this MvBinaryWriter writer, T value) where T : IMvNetworkMessage
         {
-            if (value == null)
-            {
-                writer.WriteByte(0);
-                return;
-            }
-
-            writer.WriteByte(1);
-            writer.WriteNetworkMessage(value);
-        }
-
-        public static T ReadNetworkMessageStruct<T>(this MvBinaryReader reader) where T : struct, IMvNetworkMessage
-        {
-            return reader.ReadNetworkMessage<T>();
-        }
-
-        public static void WriteNetworkMessageStruct<T>(this MvBinaryWriter writer, T value)
-            where T : struct, IMvNetworkMessage
-        {
-            writer.WriteNetworkMessage(value);
+            writer.Write(value);
         }
 
         public static T? ReadNullable<T>(this MvBinaryReader reader) where T : struct

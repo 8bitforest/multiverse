@@ -7,17 +7,19 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using Multiverse.Utils;
 using Unity.Collections.LowLevel.Unsafe;
-using UnityEngine;
 
 namespace Multiverse.Messaging
 {
     public class MvBinaryReader
     {
-        private delegate object ReadMethod(MvBinaryReader reader);
+        private delegate T ReadMethod<out T>(MvBinaryReader reader);
 
-        private static readonly Dictionary<Type, ReadMethod> ReadMethods;
+        private static class ReadMethods<T>
+        {
+            internal static ReadMethod<T> ReadMethod { get; set; }
+        }
+
         private static readonly Dictionary<Type, MethodInfo> GenericExtensionMethods;
-        private static readonly Dictionary<Type, ReadMethod> ClassStructReadMethods;
 
         private readonly ArraySegment<byte> _data;
         private int _position;
@@ -32,55 +34,90 @@ namespace Multiverse.Messaging
                 .Where(m => m.GetParameters().Length == 1 && m.ReturnType != typeof(void))
                 .Where(m => m.GetParameters()[0].ParameterType == typeof(MvBinaryReader)).ToArray();
 
-            ReadMethods = extensions
-                .Where(m => !m.IsGenericMethod)
-                .ToDictionary(m => m.ReturnType, CreateReadMethod);
+            // Register all non-generic extensions
+            foreach (var m in extensions.Where(m => !m.IsGenericMethod))
+            {
+                typeof(MvBinaryReader).GetMethod(nameof(RegisterReadMethod),
+                        BindingFlags.NonPublic | BindingFlags.Static)!
+                    .MakeGenericMethod(m.ReturnType)
+                    .Invoke(null, new object[] {m});
+            }
 
             GenericExtensionMethods = extensions
                 .Where(m => m.IsGenericMethod)
                 .ToDictionary(m => ReflectionUtils.GetGenericTypeDefinition(m.ReturnType));
-
-            ClassStructReadMethods = new Dictionary<Type, ReadMethod>();
-
-            Debug.Log($"Registered {ReadMethods.Count} MvBinaryReader methods");
         }
 
-        private static ReadMethod FindReadMethodForType<T>()
+        private static ReadMethod<T> RegisterReadMethod<T>(MethodInfo extensionMethod = null)
         {
-            return FindReadMethodForType(typeof(T));
-        }
-
-        private static ReadMethod FindReadMethodForType(Type type)
-        {
-            if (ReadMethods.ContainsKey(type))
-                return ReadMethods[type];
-
-            Debug.LogWarning($"Type {type} doesn't have a read method yet! Making one...");
-
+            var type = typeof(T);
+            if (extensionMethod != null)
+                return ReadMethods<T>.ReadMethod = CreateReadMethod<T>(extensionMethod);
+            if (typeof(IMvNetworkMessage).IsAssignableFrom(type))
+                return ReadMethods<T>.ReadMethod = CreateReadClass<T>();
             if (GenericExtensionMethods.ContainsKey(ReflectionUtils.GetGenericTypeDefinition(type)))
+                return ReadMethods<T>.ReadMethod =
+                    CreateReadMethod<T>(GenericExtensionMethods[ReflectionUtils.GetGenericTypeDefinition(type)]);
+
+            throw new MvException($"{type} cannot be read from MvBinaryReader!");
+        }
+
+        private static ReadMethod<T> CreateReadClass<T>()
+        {
+            var type = typeof(T);
+            var isStruct = type.IsValueType;
+            var exps = new List<Expression>();
+
+            var fieldsProps = ReflectionUtils.GetAllFieldsProperties(type).ToArray();
+            var readByteMethod = Expression.Constant(ReadMethods<byte>.ReadMethod);
+            var readerParam = Expression.Parameter(typeof(MvBinaryReader));
+            var instanceVar = Expression.Variable(type);
+
+            exps.Add(Expression.Assign(instanceVar, Expression.New(type)));
+            exps.AddRange(fieldsProps.Select(fieldProp =>
             {
-                var method = GenericExtensionMethods[ReflectionUtils.GetGenericTypeDefinition(type)];
-                ReadMethods[type] = CreateReadMethod(method, type);
-                return ReadMethods[type];
+                var fpType = ReflectionUtils.GetFieldPropertyType(fieldProp);
+                var readMethod = typeof(MvBinaryReader).GetMethod(nameof(Read))!.MakeGenericMethod(fpType);
+                var fieldPropExp = Expression.PropertyOrField(instanceVar, fieldProp.Name);
+                return Expression.Assign(fieldPropExp, Expression.Call(readerParam, readMethod));
+            }));
+            exps.Add(instanceVar);
+
+            var blockExp = Expression.Block(new[] {instanceVar}, exps);
+
+            if (isStruct)
+                return Expression.Lambda<ReadMethod<T>>(blockExp, readerParam).Compile();
+
+            var returnTarget = Expression.Label(type);
+            var nullCheckExp = Expression.IfThenElse(
+                Expression.Equal(Expression.Invoke(readByteMethod, readerParam), Expression.Constant((byte) 0)),
+                Expression.Return(returnTarget, Expression.Constant(null, type)),
+                Expression.Return(returnTarget, blockExp));
+
+            var returnLabel = Expression.Label(returnTarget, Expression.Constant(null, type));
+            return Expression.Lambda<ReadMethod<T>>(Expression.Block(nullCheckExp, returnLabel), readerParam).Compile();
+        }
+
+        private static ReadMethod<T> CreateReadMethod<T>(MethodInfo extensionMethod)
+        {
+            var type = typeof(T);
+            ParameterExpression[] args = {Expression.Parameter(typeof(MvBinaryReader))};
+            Expression[] convertedArgs = {args[0]};
+
+            MethodCallExpression call;
+            try
+            {
+                call = !extensionMethod.IsGenericMethod
+                    ? Expression.Call(extensionMethod, convertedArgs)
+                    : Expression.Call(extensionMethod.MakeGenericMethod(ReflectionUtils.GetGenericType(type)),
+                        convertedArgs);
+            }
+            catch (ArgumentException)
+            {
+                throw new MvException($"{type} cannot be read from MvBinaryReader!");
             }
 
-            throw new MvException($"{type} cannot be written to MvBinaryWriter!");
-        }
-
-        private static ReadMethod CreateReadMethod(MethodInfo extensionMethod)
-        {
-            return CreateReadMethod(extensionMethod, extensionMethod.ReturnType);
-        }
-
-        private static ReadMethod CreateReadMethod(MethodInfo extensionMethod, Type type)
-        {
-            ParameterExpression[] arguments = {Expression.Parameter(typeof(MvBinaryReader))};
-            var convertedCall = !extensionMethod.IsGenericMethod
-                ? Expression.Convert(Expression.Call(extensionMethod, arguments.Cast<Expression>()), typeof(object))
-                : Expression.Convert(
-                    Expression.Call(extensionMethod.MakeGenericMethod(ReflectionUtils.GetGenericType(type)),
-                        arguments.Cast<Expression>()), typeof(object));
-            return Expression.Lambda<ReadMethod>(convertedCall, arguments).Compile();
+            return Expression.Lambda<ReadMethod<T>>(call, args).Compile();
         }
 
         public MvBinaryReader(byte[] bytes)
@@ -129,33 +166,12 @@ namespace Multiverse.Messaging
             return bytes;
         }
 
-        internal T ReadNetworkMessage<T>() where T : IMvNetworkMessage
-        {
-            var type = typeof(T);
-            if (!ClassStructReadMethods.ContainsKey(type))
-            {
-                var fieldsProps = ReflectionUtils.GetAllFieldsProperties(type).ToArray();
-                var setters = fieldsProps.Select(ReflectionUtils.GetFieldPropertySetter).ToArray();
-                var readMethods = fieldsProps.Select(fp =>
-                    FindReadMethodForType(ReflectionUtils.GetFieldPropertyType(fp))).ToArray();
-
-                object ReadMethod(MvBinaryReader r)
-                {
-                    var obj = Activator.CreateInstance(type);
-                    for (var i = 0; i < setters.Length; i++)
-                        setters[i](obj, readMethods[i](r));
-                    return obj;
-                }
-
-                ClassStructReadMethods[type] = ReadMethod;
-            }
-
-            return (T) ClassStructReadMethods[type](this);
-        }
-
         public T Read<T>()
         {
-            return (T) FindReadMethodForType<T>()(this);
+            var method = ReadMethods<T>.ReadMethod;
+            if (method != null)
+                return method(this);
+            return RegisterReadMethod<T>()(this);
         }
 
         private void EnsureLength(int length)
