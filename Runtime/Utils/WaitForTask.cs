@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using UnityEngine;
 
-namespace Multiverse
+namespace Multiverse.Utils
 {
     public class WaitForTask : CustomYieldInstruction
     {

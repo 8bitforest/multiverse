@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace Multiverse
+namespace Multiverse.Utils
 {
     public class WaitUntilTimeout : CustomYieldInstruction
     {
@@ -23,7 +23,7 @@ namespace Multiverse
             }
         }
 
-        public WaitUntilTimeout(Func<bool> predicate, float seconds)
+        public WaitUntilTimeout(Func<bool> predicate, float seconds = Multiverse.Timeout)
         {
             _startTime = Time.time;
             _seconds = seconds;

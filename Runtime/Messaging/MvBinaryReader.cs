@@ -12,16 +12,16 @@ namespace Multiverse.Messaging
 {
     public class MvBinaryReader
     {
-        private delegate T ReadMethod<out T>(MvBinaryReader reader);
+        internal delegate T ReadMethod<out T>(MvBinaryReader reader);
 
         private static class ReadMethods<T>
         {
-            internal static ReadMethod<T> ReadMethod { get; set; }
+            public static ReadMethod<T> ReadMethod { get; set; }
         }
 
         private static readonly Dictionary<Type, MethodInfo> GenericExtensionMethods;
 
-        private readonly ArraySegment<byte> _data;
+        private ArraySegment<byte> _data;
         private int _position;
 
         static MvBinaryReader()
@@ -48,7 +48,7 @@ namespace Multiverse.Messaging
                 .ToDictionary(m => ReflectionUtils.GetGenericTypeDefinition(m.ReturnType));
         }
 
-        private static ReadMethod<T> RegisterReadMethod<T>(MethodInfo extensionMethod = null)
+        internal static ReadMethod<T> RegisterReadMethod<T>(MethodInfo extensionMethod = null)
         {
             var type = typeof(T);
             if (extensionMethod != null)
@@ -120,6 +120,12 @@ namespace Multiverse.Messaging
             return Expression.Lambda<ReadMethod<T>>(call, args).Compile();
         }
 
+        public MvBinaryReader()
+        {
+            _data = new ArraySegment<byte>(new byte[] { });
+            _position = 0;
+        }
+        
         public MvBinaryReader(byte[] bytes)
         {
             _data = new ArraySegment<byte>(bytes, 0, bytes.Length);
@@ -127,6 +133,12 @@ namespace Multiverse.Messaging
         }
 
         public MvBinaryReader(ArraySegment<byte> bytes)
+        {
+            _data = bytes;
+            _position = 0;
+        }
+
+        public void Reset(ArraySegment<byte> bytes)
         {
             _data = bytes;
             _position = 0;

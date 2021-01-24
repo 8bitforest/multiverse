@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Multiverse
+namespace Multiverse.Utils
 {
     public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
     {

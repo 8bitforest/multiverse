@@ -1,5 +1,7 @@
 using System.Collections;
+using Multiverse.Tests.Base;
 using Multiverse.Tests.Extensions;
+using Multiverse.Utils;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 
@@ -58,7 +60,7 @@ namespace Multiverse.Tests
                 Assert.NotNull(NetworkManager.Client);
                 Assert.Null(NetworkManager.Host);
             });
-            yield return new WaitUntilTimeout(() => NetworkManager.Client.Connections.Count == 2, 15);
+            yield return new WaitUntilTimeout(() => NetworkManager.Client.Connections.Count == 2);
             yield return onConnectedCalled;
 
             var onDisconnectedCalled = AssertExtensions.EventCalled(NetworkManager.OnDisconnected);

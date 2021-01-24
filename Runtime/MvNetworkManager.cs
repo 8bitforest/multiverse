@@ -1,4 +1,5 @@
-using System;
+using Multiverse.LibraryInterfaces;
+using Multiverse.Utils;
 using Reaction;
 using UnityEngine;
 
@@ -23,6 +24,12 @@ namespace Multiverse
 
         public void SetTimeout(float seconds) => _library.SetTimeout(seconds);
 
+        public void ClearAllMessageReceivers()
+        {
+            MvClient.ClearMessageReceivers();
+            MvServer.ClearMessageReceivers();
+        }
+
         private void Awake()
         {
             _library = GetComponent<IMvLibrary>();
@@ -31,7 +38,7 @@ namespace Multiverse
             OnConnected = new RxnEvent();
             OnDisconnected = new RxnEvent();
         }
-        
+
         private void Connected((bool isHost, bool isClient) args)
         {
             IsConnected = true;

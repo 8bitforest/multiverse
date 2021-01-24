@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Linq;
+using Multiverse.Tests.Base;
 using Multiverse.Tests.Extensions;
+using Multiverse.Utils;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 
@@ -38,7 +40,7 @@ namespace Multiverse.Tests
             StopTestServer();
             yield return onDisconnectedCalled;
 
-            yield return new WaitUntilTimeout(() => NetworkManager.Matchmaker.Matches.Count == 0, 15);
+            yield return new WaitUntilTimeout(() => NetworkManager.Matchmaker.Matches.Count == 0);
 
             StartTestServer();
             yield return WaitForTestServer();
@@ -49,7 +51,7 @@ namespace Multiverse.Tests
         public IEnumerator OtherClientConnects()
         {
             StartTestClient();
-            yield return new WaitUntilTimeout(() => NetworkManager.Client.Connections.Count > 2, 15);
+            yield return new WaitUntilTimeout(() => NetworkManager.Client.Connections.Count > 2);
             Assert.AreEqual(2, NetworkManager.Client.OtherConnections.Count());
             var otherClients = NetworkManager.Client.OtherConnections.ToArray();
             var hostClient = otherClients.FirstOrDefault(c => c.IsHost);

@@ -1,12 +1,13 @@
 namespace Multiverse
 {
     // TODO: Find a better name for this
+    // This is NOT a connection. It is a reference to another "player"
     public class MvConnection
     {
-        public string Name { get; private set; }
-        public int Id { get; private set; }
-        public bool IsHost { get; private set; }
-        public bool IsLocal { get; private set; }
+        public string Name { get; }
+        public int Id { get; }
+        public bool IsHost { get; }
+        public bool IsLocal { get; }
 
         public MvConnection(string name, int id, bool isHost, bool isLocal)
         {

@@ -26,7 +26,23 @@ namespace Multiverse.Tests.Scenes.Scripts
                 await Task.Delay(1000);
             }
 
+            MvClient.AddMessageReceiver<ClientRequestMessage>(ClientRequest);
+
             await _networkManager.Matchmaker.JoinMatch(match);
+        }
+
+        private void ClientRequest(MvConnection connection, ClientRequestMessage msg)
+        {
+            switch (msg.RequestType)
+            {
+                case ClientRequestType.RespondToServer:
+                    _networkManager.Client.SendMessageToServer(new ClientResponseMessage {Id = msg.Id});
+                    break;
+                case ClientRequestType.RequestServer:
+                    _networkManager.Client.SendMessageToServer(new ServerRequestMessage
+                        {RequestType = ServerRequestType.RespondToAll, Id = msg.Id});
+                    break;
+            }
         }
     }
 }

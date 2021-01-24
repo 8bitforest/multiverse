@@ -4,11 +4,13 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Multiverse.Tests.Utils;
+using Multiverse.Utils;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Multiverse.Tests
+namespace Multiverse.Tests.Base
 {
     public abstract class MultiverseTestFixture
     {
@@ -50,6 +52,7 @@ namespace Multiverse.Tests
         [TearDown]
         public void TearDownBase()
         {
+            NetworkManager.ClearAllMessageReceivers();
             TearDown();
         }
 

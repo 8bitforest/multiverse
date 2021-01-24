@@ -1,9 +1,8 @@
 using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
-using UnityEngine.TestTools;
 
-namespace Multiverse.Tests
+namespace Multiverse.Tests.Utils
 {
     public abstract class MultiverseTestSetUp<T> where T : IMvTestLibraryAdder, new()
     {

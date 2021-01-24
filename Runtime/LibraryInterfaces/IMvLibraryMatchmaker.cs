@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Reaction;
 
-namespace Multiverse
+namespace Multiverse.LibraryInterfaces
 {
     // TODO: Rename matches to rooms
     public interface IMvLibraryMatchmaker

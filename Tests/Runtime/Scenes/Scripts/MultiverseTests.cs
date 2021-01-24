@@ -10,7 +10,7 @@ namespace Multiverse.Tests.Scenes.Scripts
         {
             if (Environment.GetCommandLineArgs().Contains("-client"))
                 gameObject.AddComponent<TestClient>();
-            else if (Environment.GetCommandLineArgs().Contains("-server"))
+            else
                 gameObject.AddComponent<TestServer>();
         }
     }

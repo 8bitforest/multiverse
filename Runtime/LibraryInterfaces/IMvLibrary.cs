@@ -1,4 +1,4 @@
-namespace Multiverse
+namespace Multiverse.LibraryInterfaces
 {
     public interface IMvLibrary
     {

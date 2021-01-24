@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Multiverse.Tests
+namespace Multiverse.Tests.Utils
 {
     public class MultiverseTestManager : MonoBehaviour
     {

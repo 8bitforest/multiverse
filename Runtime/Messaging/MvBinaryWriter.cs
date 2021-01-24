@@ -13,7 +13,7 @@ namespace Multiverse.Messaging
     {
         public const int MaxStringLength = 1024 * 32;
 
-        private delegate void WriteMethod<in T>(MvBinaryWriter writer, T value);
+        internal delegate void WriteMethod<in T>(MvBinaryWriter writer, T value);
 
         private static class WriteMethods<T>
         {
@@ -49,7 +49,7 @@ namespace Multiverse.Messaging
                 .ToDictionary(m => ReflectionUtils.GetGenericTypeDefinition(m.GetParameters()[1].ParameterType));
         }
 
-        private static WriteMethod<T> RegisterWriteMethod<T>(MethodInfo extensionMethod = null)
+        internal static WriteMethod<T> RegisterWriteMethod<T>(MethodInfo extensionMethod = null)
         {
             var type = typeof(T);
             if (extensionMethod != null)
@@ -130,7 +130,7 @@ namespace Multiverse.Messaging
             return new ArraySegment<byte>(_buffer, 0, _position);
         }
 
-        public void Clear()
+        public void Reset()
         {
             _position = 0;
         }

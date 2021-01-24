@@ -1,6 +1,6 @@
 using System.Threading.Tasks;
 
-namespace Multiverse
+namespace Multiverse.Utils
 {
     public class TaskCompletionSource : TaskCompletionSource<object>
     {

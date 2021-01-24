@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Linq;
-using Multiverse.Tests.Extensions;
+using Multiverse.Tests.Base;
+using Multiverse.Utils;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 
@@ -25,6 +26,7 @@ namespace Multiverse.Tests
             Assert.NotNull(NetworkManager.Host);
             Assert.AreEqual(1, NetworkManager.Client.Connections.Count);
             Assert.AreEqual(0, NetworkManager.Client.OtherConnections.Count());
+            Assert.AreEqual(1, NetworkManager.Server.Clients.Count);
             
             Assert.NotNull(NetworkManager.Client.LocalConnection);
             Assert.True(NetworkManager.Client.LocalConnection.IsHost);
@@ -35,8 +37,9 @@ namespace Multiverse.Tests
         public IEnumerator ClientConnects()
         {
             StartTestClient();
-            yield return new WaitUntilTimeout(() => NetworkManager.Client.Connections.Count > 1, 15);
+            yield return new WaitUntilTimeout(() => NetworkManager.Client.Connections.Count > 1);
             Assert.AreEqual(1, NetworkManager.Client.OtherConnections.Count());
+            Assert.AreEqual(2, NetworkManager.Server.Clients.Count);
             var otherClient = NetworkManager.Client.OtherConnections.First();
             Assert.False(otherClient.IsHost);
             Assert.False(otherClient.IsLocal);
@@ -45,6 +48,7 @@ namespace Multiverse.Tests
             StopTestClients();
             yield return new WaitUntilTimeout(() => NetworkManager.Client.Connections.Count == 1, 45);
             Assert.AreEqual(0, NetworkManager.Client.OtherConnections.Count());
+            Assert.AreEqual(1, NetworkManager.Server.Clients.Count);
         }
     }
 }
