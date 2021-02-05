@@ -1,12 +1,9 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using Multiverse.LibraryInterfaces;
 using UnityEditor;
-using UnityEditor.Compilation;
 using UnityEngine;
-using Assembly = System.Reflection.Assembly;
+using Multiverse.LibraryInterfaces;
 
 namespace Multiverse.Tests
 {

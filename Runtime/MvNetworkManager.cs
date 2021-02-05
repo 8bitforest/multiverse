@@ -2,10 +2,13 @@ using Multiverse.LibraryInterfaces;
 using Multiverse.Utils;
 using Reaction;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Multiverse
 {
     [RequireComponent(typeof(IMvLibrary))]
+    [DisallowMultipleComponent]
+    [AddComponentMenu("Multiverse/MvNetworkManager")]
     public class MvNetworkManager : Singleton<MvNetworkManager>
     {
         public MvMatchmaker Matchmaker { get; private set; }
@@ -37,6 +40,9 @@ namespace Multiverse
             Matchmaker.OnJoinedMatch.OnInvoked(gameObject, Connected);
             OnConnected = new RxnEvent();
             OnDisconnected = new RxnEvent();
+
+            SceneManager.sceneLoaded += (s, m) => MvIdManager.LoadCurrentIds();
+            MvIdManager.LoadCurrentIds();
         }
 
         private void Connected((bool isHost, bool isClient) args)

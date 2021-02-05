@@ -1,0 +1,16 @@
+{
+    "name": "8BitForest.Multiverse.Editor",
+    "rootNamespace": "Multiverse",
+    "references": [
+        "GUID:1f77266d5a71843aa87d69a8a280bce5"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

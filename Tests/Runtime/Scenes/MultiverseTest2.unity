@@ -188,7 +188,11 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 8104986442991700275, guid: 0a9ff8fb0003d44a3aa2cbd327d112bf, type: 3}
       propertyPath: m_Name
-      value: MvTestPrefabInstance
+      value: MvTestPrefabInstance2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8104986442991700276, guid: 0a9ff8fb0003d44a3aa2cbd327d112bf, type: 3}
+      propertyPath: sceneId
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8104986442991700276, guid: 0a9ff8fb0003d44a3aa2cbd327d112bf, type: 3}
       propertyPath: sceneObjectId
@@ -251,7 +255,7 @@ GameObject:
   - component: {fileID: 1022019460}
   - component: {fileID: 1022019459}
   m_Layer: 0
-  m_Name: MvTestSceneObject
+  m_Name: MvTestSceneObject2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -270,7 +274,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   allowClientSpawn: 0
-  sceneId: 0
+  sceneId: 1
   sceneObjectId: 2
   prefabId: 0
 --- !u!4 &1022019460

@@ -1,5 +1,5 @@
 {
-    "name": "8BitForest.Multiverse.Runtime",
+    "name": "8BitForest.Multiverse",
     "rootNamespace": "Multiverse",
     "references": [
         "GUID:075eeeff030934055961f7a91dcb3137"
