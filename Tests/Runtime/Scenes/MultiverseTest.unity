@@ -191,6 +191,10 @@ PrefabInstance:
       value: MvTestPrefabInstance
       objectReference: {fileID: 0}
     - target: {fileID: 8104986442991700276, guid: 0a9ff8fb0003d44a3aa2cbd327d112bf, type: 3}
+      propertyPath: objectId
+      value: GlobalObjectId_V1-2-a83a4253ee92e43a584a9af6f7fa3f20-8104986442991700276-1013546518
+      objectReference: {fileID: 0}
+    - target: {fileID: 8104986442991700276, guid: 0a9ff8fb0003d44a3aa2cbd327d112bf, type: 3}
       propertyPath: sceneObjectId
       value: 1
       objectReference: {fileID: 0}
@@ -273,6 +277,7 @@ MonoBehaviour:
   sceneId: 0
   sceneObjectId: 2
   prefabId: 0
+  objectId: GlobalObjectId_V1-2-a83a4253ee92e43a584a9af6f7fa3f20-1022019459-0
 --- !u!4 &1022019460
 Transform:
   m_ObjectHideFlags: 0

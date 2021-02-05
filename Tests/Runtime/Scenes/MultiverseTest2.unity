@@ -195,6 +195,10 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8104986442991700276, guid: 0a9ff8fb0003d44a3aa2cbd327d112bf, type: 3}
+      propertyPath: objectId
+      value: GlobalObjectId_V1-2-ac1fc5ad9adef43cfaa02a7315c7da14-8104986442991700276-1013546518
+      objectReference: {fileID: 0}
+    - target: {fileID: 8104986442991700276, guid: 0a9ff8fb0003d44a3aa2cbd327d112bf, type: 3}
       propertyPath: sceneObjectId
       value: 1
       objectReference: {fileID: 0}
@@ -277,6 +281,7 @@ MonoBehaviour:
   sceneId: 1
   sceneObjectId: 2
   prefabId: 0
+  objectId: GlobalObjectId_V1-2-ac1fc5ad9adef43cfaa02a7315c7da14-1022019459-0
 --- !u!4 &1022019460
 Transform:
   m_ObjectHideFlags: 0

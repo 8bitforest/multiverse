@@ -25,38 +25,43 @@ namespace Multiverse
         public uint PrefabId => prefabId;
         public bool IsPrefab => PrefabId > 0 && SceneObjectId == 0;
 
+        // By serializing this we can check to see if this object was duplicated
+        [SerializeField] [ReadOnlyField] private string objectId;
+
         public uint Id { get; private set; }
         public bool IsInstance => Id > 0;
 
 #if UNITY_EDITOR
         private void OnValidate()
         {
-            GenerateIds();
+            if (Application.isPlaying)
+                return;
+            
+            // I timed this and it doesn't seem slow at all for this purpose...
+            // 500k in 80ms on i7 10700k
+            var myId = GlobalObjectId.GetGlobalObjectIdSlow(this);
+            if (myId.ToString() != objectId)
+            {
+                // This object is either new or duplicated
+                ResetIds();
+                MvIdManager.LoadCurrentIds();
+                GenerateIds();
+                objectId = myId.ToString();
+                Undo.RecordObject(this, "Generate Ids");
+            }
         }
 
         internal void GenerateIds()
         {
-            // Have to check the GlobalObjectId to make sure this game object is actually new, not
-            // just a duplicate of an existing object
-            var myId = GlobalObjectId.GetGlobalObjectIdSlow(this);
-            if (myId.identifierType == 0)
-                return;
-
-            if (PrefabUtility.IsPartOfPrefabAsset(gameObject))
-            {
-                if (prefabId == 0 || !myId.Equals(MvIdManager.GetPrefabReference(prefabId).ObjectId))
-                    GeneratePrefabId();
-            }
-            else
-            {
-                if (sceneObjectId == 0 ||
-                    !myId.Equals(MvIdManager.GetSceneObjectReference(sceneId, sceneObjectId).ObjectId))
-                    GenerateSceneObjectId();
-            }
+            if (PrefabUtility.IsPartOfPrefabAsset(gameObject) && prefabId == 0)
+                GeneratePrefabId();
+            else if (!PrefabUtility.IsPartOfPrefabAsset(gameObject) && sceneObjectId == 0)
+                GenerateSceneObjectId();
         }
 
         internal void ResetIds()
         {
+            objectId = null;
             sceneId = 0;
             sceneObjectId = 0;
             prefabId = 0;
@@ -64,9 +69,6 @@ namespace Multiverse
 
         private void GenerateSceneObjectId()
         {
-            if (Application.isPlaying)
-                return;
-
             if (BuildPipeline.isBuildingPlayer)
                 throw new InvalidOperationException(
                     $"{name} has no valid sceneId yet! Cannot build scene {gameObject.scene.name}!");
@@ -75,16 +77,12 @@ namespace Multiverse
                 throw new InvalidOperationException(
                     $"{gameObject.name} is in a scene not enabled in build settings. This is not supported!");
 
-            Undo.RecordObject(this, "Generate SceneId");
             sceneId = MvIdManager.GetSceneId(gameObject.scene.buildIndex);
-            sceneObjectId = MvIdManager.GenerateNextSceneId(this);
+            sceneObjectId = MvIdManager.GenerateNextSceneObjectId(this);
         }
 
         private void GeneratePrefabId()
         {
-            if (Application.isPlaying)
-                return;
-
             if (BuildPipeline.isBuildingPlayer)
                 throw new InvalidOperationException(
                     $"{name} has no valid prefabId yet! Cannot build scene {gameObject.scene.name}!");

@@ -6,27 +6,10 @@ using UnityEngine.SceneManagement;
 using UnityEditor.Callbacks;
 using UnityEditor;
 #endif
-using IdDict = System.Collections.Generic.Dictionary<uint, Multiverse.Utils.PersistentGameObjectReference>;
+using IdDict = System.Collections.Generic.Dictionary<uint, Multiverse.MvGameObject>;
 
 namespace Multiverse.Utils
 {
-    internal readonly struct PersistentGameObjectReference
-    {
-        public MvGameObject MvGameObject { get; }
-#if UNITY_EDITOR
-        public GlobalObjectId ObjectId { get; }
-#endif
-
-        public PersistentGameObjectReference(MvGameObject mvGameObject)
-        {
-            MvGameObject = mvGameObject;
-
-#if UNITY_EDITOR
-            ObjectId = GlobalObjectId.GetGlobalObjectIdSlow(mvGameObject);
-#endif
-        }
-    }
-
     internal static class MvIdManager
     {
         private static readonly Dictionary<int, byte> SceneIds = new Dictionary<int, byte>();
@@ -95,7 +78,7 @@ namespace Multiverse.Utils
             LoadCurrentIds();
         }
 
-        public static uint GenerateNextSceneId(MvGameObject gameObject)
+        public static uint GenerateNextSceneObjectId(MvGameObject gameObject)
         {
             var sceneId = GetSceneId(gameObject.gameObject.scene.buildIndex);
 
@@ -132,26 +115,10 @@ namespace Multiverse.Utils
 
         public static MvGameObject GetSceneObject(byte sceneId, uint id)
         {
-            if (!SceneObjects.ContainsKey(sceneId))
-                LoadCurrentIds();
-
-            return SceneObjects[sceneId][id].MvGameObject;
-        }
-
-        internal static PersistentGameObjectReference GetSceneObjectReference(byte sceneId, uint id)
-        {
-            if (!SceneObjects.ContainsKey(sceneId))
-                LoadCurrentIds();
-
             return SceneObjects[sceneId][id];
         }
 
         public static MvGameObject GetPrefab(uint id)
-        {
-            return Prefabs[id].MvGameObject;
-        }
-
-        internal static PersistentGameObjectReference GetPrefabReference(uint id)
         {
             return Prefabs[id];
         }
@@ -169,13 +136,13 @@ namespace Multiverse.Utils
                 return;
             }
 
-            existingIds[id] = new PersistentGameObjectReference(gameObject);
+            existingIds[id] = gameObject;
         }
 
         private static uint GenerateNextId(IdDict existingIds, MvGameObject gameObject)
         {
             var nextId = 1u;
-            foreach (var id in existingIds.Keys)
+            foreach (var id in existingIds.Keys.OrderBy(i => i))
             {
                 if (id == nextId)
                     nextId++;
@@ -183,7 +150,7 @@ namespace Multiverse.Utils
                     break;
             }
 
-            existingIds[nextId] = new PersistentGameObjectReference(gameObject);
+            existingIds[nextId] = gameObject;
             return nextId;
         }
     }
