@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 
 namespace Multiverse.Utils
@@ -8,7 +9,11 @@ namespace Multiverse.Utils
     {
         public static Type GetGenericTypeDefinition(Type type)
         {
-            return type.IsGenericType ? type.GetGenericTypeDefinition() : type.BaseType;
+            if (type.IsGenericParameter && type.GetGenericParameterConstraints().Length == 1)
+                return type.GetGenericParameterConstraints()[0];
+            if (type.IsGenericType)
+                return type.GetGenericTypeDefinition();
+            return type.BaseType;
         }
 
         public static Type GetGenericType(Type type)

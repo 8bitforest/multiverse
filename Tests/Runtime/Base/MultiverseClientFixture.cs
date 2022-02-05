@@ -1,19 +1,19 @@
-using System.Collections;
-using Multiverse.Utils;
+using System.Threading.Tasks;
+using Multiverse.Tests.Assets.Scripts;
+using UnityEngine.TestTools;
 
 namespace Multiverse.Tests.Base
 {
     public abstract class MultiverseClientFixture : MultiverseTestFixture
     {
-        protected override IEnumerator UnityOneTimeSetUp()
+        [AsyncOneTimeSetUp]
+        public async Task AsyncOneTimeSetUp()
         {
-            yield return new WaitForTask(NetworkManager.Matchmaker.Connect());
-            StartTestServer();
-            yield return WaitForTestServer();
-            yield return new WaitForTask(JoinServerMatch());
-            
-            StartTestClient();
-            yield return new WaitUntilTimeout(() => NetworkManager.Client.Connections.Count > 2);
+            await NetworkManager.Matchmaker.Connect<TestMatchData>();
+            await StartTestServer();
+            await JoinServerMatch();
+            await StartTestClient();
+            // TODO: Wait for other client to join?
         }
     }
 }

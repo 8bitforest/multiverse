@@ -11,11 +11,6 @@ namespace Multiverse.Tests.Extensions
 {
     public static class AssertExtensions
     {
-        public static IEnumerator EventCalled(RxnEvent e)
-        {
-            return new WaitForTask(e.Wait(60));
-        }
-
         public static async Task ThrowsAsync<T>(Task asyncMethod) where T : Exception
         {
             await ThrowsAsync<T>(asyncMethod, "");

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Multiverse.Messaging;
+using Multiverse.Serialization;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -278,16 +279,14 @@ namespace Multiverse.Tests
         [Test]
         public void ReadWriteNetworkMessageClass()
         {
-            // TODO: Timing tests vs. mirror in mirror tests folder
-            // finally, send events!
             var b = new TestClassB {FloatProp = 20.25f, EnumField = TestEnum.OptionB};
             var a = new TestClassA {BProp = b, IntProp = 10, BField = b, IntField = 20};
-            TestReadWrite(a, MvSerializableTypes.ReadNetworkMessage<TestClassA>,
-                MvSerializableTypes.WriteNetworkMessage);
-            TestReadWrite(b, MvSerializableTypes.ReadNetworkMessage<TestClassB>,
-                MvSerializableTypes.WriteNetworkMessage);
-            TestReadWrite(null, MvSerializableTypes.ReadNetworkMessage<TestClassA>,
-                MvSerializableTypes.WriteNetworkMessage);
+            TestReadWrite(a, MvSerializableTypes.ReadSerializable<TestClassA>,
+                MvSerializableTypes.WriteSerializable);
+            TestReadWrite(b, MvSerializableTypes.ReadSerializable<TestClassB>,
+                MvSerializableTypes.WriteSerializable);
+            TestReadWrite(null, MvSerializableTypes.ReadSerializable<TestClassA>,
+                MvSerializableTypes.WriteSerializable);
         }
 
         [Test]
@@ -321,10 +320,10 @@ namespace Multiverse.Tests
         {
             var b = new TestStructB {FloatProp = 20.25f, EnumField = TestEnum.OptionB};
             var a = new TestStructA {BProp = b, IntProp = 10, BField = b, IntField = 20};
-            TestReadWrite(a, MvSerializableTypes.ReadNetworkMessage<TestStructA>,
-                MvSerializableTypes.WriteNetworkMessage);
-            TestReadWrite(b, MvSerializableTypes.ReadNetworkMessage<TestStructB>,
-                MvSerializableTypes.WriteNetworkMessage);
+            TestReadWrite(a, MvSerializableTypes.ReadSerializable<TestStructA>,
+                MvSerializableTypes.WriteSerializable);
+            TestReadWrite(b, MvSerializableTypes.ReadSerializable<TestStructB>,
+                MvSerializableTypes.WriteSerializable);
         }
 
         [Test]
@@ -410,7 +409,7 @@ namespace Multiverse.Tests
         [Test]
         public void ThrowsWriteInvalidClass()
         {
-            // Assert.Throws<MvException>(() => _writer.Write(new InvalidClass()));
+            Assert.Throws<MvException>(() => _writer.Write(new InvalidClass()));
         }
 
         [Test]
@@ -459,7 +458,7 @@ namespace Multiverse.Tests
 
         private class InvalidClass { }
 
-        private class TestClassB : IMvNetworkMessage
+        private class TestClassB : IMvSerializable
         {
             public float FloatProp { get; set; }
             public TestEnum EnumField;
@@ -478,7 +477,7 @@ namespace Multiverse.Tests
             }
         }
 
-        private class TestClassA : IMvNetworkMessage
+        private class TestClassA : IMvSerializable
         {
             public TestClassB BProp { get; set; }
             public int IntProp { get; set; }
@@ -502,7 +501,7 @@ namespace Multiverse.Tests
 
         private struct InvalidStruct { }
 
-        private struct TestStructB : IMvNetworkMessage
+        private struct TestStructB : IMvSerializable
         {
             public float FloatProp { get; set; }
             public TestEnum EnumField;
@@ -518,7 +517,7 @@ namespace Multiverse.Tests
             }
         }
 
-        private struct TestStructA : IMvNetworkMessage
+        private struct TestStructA : IMvSerializable
         {
             public TestStructB BProp { get; set; }
             public int IntProp { get; set; }

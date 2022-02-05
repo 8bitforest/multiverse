@@ -1,18 +1,19 @@
-using System.Collections;
+using System.Threading.Tasks;
+using Multiverse.Tests.Assets.Scripts;
 using Multiverse.Tests.Base;
-using Multiverse.Tests.Extensions;
-using Multiverse.Utils;
 using NUnit.Framework;
+using UnityEngine;
 using UnityEngine.TestTools;
 
 namespace Multiverse.Tests
 {
     public abstract class ClientNotJoinedTests : MultiverseTestFixture
     {
-        protected override IEnumerator UnityOneTimeSetUp()
+        [AsyncOneTimeSetUp]
+        public async Task AsyncOneTimeSetUp()
         {
-            StartTestServer();
-            yield return WaitForTestServer();
+            await StartTestServer();
+            await WaitForTestServer();
         }
 
         [Test]
@@ -26,67 +27,56 @@ namespace Multiverse.Tests
             Assert.Null(NetworkManager.Host);
         }
 
-        [UnityTest]
-        public IEnumerator MatchExists()
+        [Test]
+        public void MatchExists()
         {
-            yield return new WaitForTask(async () =>
-            {
-                var match = await FindServerMatch();
-                Assert.IsNotNull(match);
-            });
+            var match = FindServerMatch();
+            Assert.IsNotNull(match);
         }
 
-        [UnityTest]
-        public IEnumerator MatchHas4MaxPlayers()
+        [Test]
+        public void MatchHas4MaxPlayers()
         {
-            yield return new WaitForTask(async () =>
-            {
-                var match = await FindServerMatch();
-                Assert.AreEqual(4, match.MaxPlayers);
-            });
+            var match = FindServerMatch();
+            Assert.AreEqual(4, match.MaxPlayers);
         }
 
-        [UnityTest]
-        public IEnumerator JoinsLeavesMatch()
+        [Test]
+        public void MatchHasCustomData()
         {
-            var onConnectedCalled = AssertExtensions.EventCalled(NetworkManager.OnConnected);
-            yield return new WaitForTask(async () =>
-            {
-                await JoinServerMatch();
-                Assert.True(NetworkManager.IsConnected);
-                Assert.True(NetworkManager.IsClient);
-                Assert.False(NetworkManager.IsHost);
-                Assert.Null(NetworkManager.Server);
-                Assert.NotNull(NetworkManager.Client);
-                Assert.Null(NetworkManager.Host);
-            });
-            yield return new WaitUntilTimeout(() => NetworkManager.Client.Connections.Count == 2);
-            yield return onConnectedCalled;
-
-            var onDisconnectedCalled = AssertExtensions.EventCalled(NetworkManager.OnDisconnected);
-            yield return new WaitForTask(async () =>
-            {
-                await NetworkManager.Client.Disconnect();
-                Assert.False(NetworkManager.IsConnected);
-                Assert.False(NetworkManager.IsClient);
-                Assert.False(NetworkManager.IsHost);
-                Assert.Null(NetworkManager.Server);
-                Assert.Null(NetworkManager.Client);
-                Assert.Null(NetworkManager.Host);
-            });
-            yield return onDisconnectedCalled;
-            yield return WaitForTestServer();
+            var match = FindServerMatch();
+            var customData = match.GetCustomData<TestMatchData>();
+            var expectedData = TestMatchData.Create();
+            Assert.AreEqual(expectedData.StringData, customData.StringData);
+            Assert.AreEqual(expectedData.IntData, customData.IntData);
+            Assert.AreEqual(expectedData.FloatData, customData.FloatData);
         }
 
-        [UnityTest]
-        public IEnumerator JoinsInvalidMatchThrows()
+        [AsyncTest]
+        public async Task JoinsLeavesMatch()
         {
-            LogAssert.ignoreFailingMessages = true;
-            yield return new WaitForTask(async () =>
-            {
-                var match = new MvMatch(null, "0", 4);
-                await AssertExtensions.ThrowsAsync<MvException>(NetworkManager.Matchmaker.JoinMatch(match));
-            });
+            var onConnectedCalled = NetworkManager.OnConnected.Wait(Multiverse.Timeout);
+            await JoinServerMatch();
+            Assert.True(NetworkManager.IsConnected);
+            Assert.True(NetworkManager.IsClient);
+            Assert.False(NetworkManager.IsHost);
+            Assert.Null(NetworkManager.Server);
+            Assert.NotNull(NetworkManager.Client);
+            Assert.Null(NetworkManager.Host);
+            Assert.AreEqual(2, NetworkManager.Client.Players.Count);
+            await onConnectedCalled;
+
+            var onDisconnectedCalled = NetworkManager.OnDisconnected.Wait(Multiverse.Timeout);
+            await NetworkManager.Client.Disconnect();
+            Assert.False(NetworkManager.IsConnected);
+            Assert.False(NetworkManager.IsClient);
+            Assert.False(NetworkManager.IsHost);
+            Assert.Null(NetworkManager.Server);
+            Assert.Null(NetworkManager.Client);
+            Assert.Null(NetworkManager.Host);
+            await onDisconnectedCalled;
+
+            await WaitForTestServer();
         }
     }
 }

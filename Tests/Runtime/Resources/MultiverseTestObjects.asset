@@ -1,0 +1,17 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e69dbe0c0e844f0fb467b02678b639a5, type: 3}
+  m_Name: MultiverseTestObjects
+  m_EditorClassIdentifier: 
+  <ServerOnlyPrefab>k__BackingField: {fileID: 8104986442991700275, guid: 0a9ff8fb0003d44a3aa2cbd327d112bf, type: 3}
+  <ClientServerPrefab>k__BackingField: {fileID: 8104986442991700275, guid: 0d55e1c9b5ccf4b6fabffe5009c4aa21, type: 3}
+  <NotMultiversePrefab>k__BackingField: {fileID: 8104986442991700275, guid: 3509758934d874469832a35f93aee635, type: 3}

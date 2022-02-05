@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Multiverse.Extensions;
+using Multiverse.Serialization;
 using UnityEngine;
 
 namespace Multiverse.Messaging
@@ -20,7 +21,7 @@ namespace Multiverse.Messaging
             // TODO: Sanity check to make sure server and client have same list of IMvNetworkMessages
             MessageTypes = AppDomain.CurrentDomain.GetAssemblies()
                 .SelectMany(a => a.GetTypes())
-                .Where(t => !t.IsInterface && typeof(IMvNetworkMessage).IsAssignableFrom(t))
+                .Where(t => !t.IsInterface && typeof(IMvMessage).IsAssignableFrom(t))
                 .OrderBy(t => t.FullName.GetDeterministicHashCode())
                 .ToArray();
 
@@ -28,7 +29,7 @@ namespace Multiverse.Messaging
             {
                 if (i == byte.MaxValue + 1)
                 {
-                    Debug.LogError("Too many IMvNetworkMessage types!");
+                    Debug.LogError("Too many IMvMessage types!");
                     break;
                 }
 
@@ -43,7 +44,7 @@ namespace Multiverse.Messaging
                     .Invoke(null, new object[] {null});
             }
 
-            Debug.Log($"Registered {MessageTypes.Length} message types");
+            Debug.Log($"Registered {MessageTypes.Length}/{byte.MaxValue} message types");
         }
 
         public static Type GetTypeForId(byte id)

@@ -19,6 +19,11 @@ namespace Multiverse.Utils
         private static readonly IdDict Prefabs = new IdDict();
         private static readonly IdDict Instances = new IdDict();
 
+        private static uint _lastMatchId;
+        private static uint _lastPlayerId;
+        private static uint _lastInstanceId;
+        private static MvPrefabs _mvPrefabs;
+
         private static void ClearIds()
         {
             SceneIds.Clear();
@@ -26,6 +31,14 @@ namespace Multiverse.Utils
             SceneObjects.Clear();
             Prefabs.Clear();
             Instances.Clear();
+
+            if (!Application.isPlaying)
+                _mvPrefabs = null;
+        }
+
+        internal static void LoadMvPrefabs()
+        {
+            _mvPrefabs = Resources.Load<MvPrefabs>(MvPrefabs.ResourceName);
         }
 
         internal static void LoadCurrentIds()
@@ -46,6 +59,11 @@ namespace Multiverse.Utils
                     mvGo.gameObject.hideFlags != HideFlags.HideAndDontSave &&
                     mvGo.gameObject.scene.name != "DontDestroyOnLoad");
 
+            // In play mode, load prefabs from _mvPrefabs, since FindObjectsOfTypeAll doesn't return prefabs
+            if (_mvPrefabs)
+                foreach (var prefab in _mvPrefabs.Prefabs)
+                    AddIdVerifyUnique(Prefabs, prefab.PrefabId, prefab);
+
             foreach (var mvGameObject in mvGameObjects)
             {
                 if (mvGameObject.IsSceneObject)
@@ -55,26 +73,24 @@ namespace Multiverse.Utils
                         SceneObjects[sceneId] = new IdDict();
                     AddIdVerifyUnique(SceneObjects[sceneId], mvGameObject.SceneObjectId, mvGameObject);
                 }
-                else if (mvGameObject.IsPrefab)
-                    AddIdVerifyUnique(Prefabs, mvGameObject.PrefabId, mvGameObject);
-                else if (mvGameObject.IsInstance)
-                    AddIdVerifyUnique(Instances, mvGameObject.Id, mvGameObject);
+
 #if UNITY_EDITOR
-                else if (EditorApplication.isPlaying)
+                if (!EditorApplication.isPlaying && mvGameObject.IsPrefab)
+                    AddIdVerifyUnique(Prefabs, mvGameObject.PrefabId, mvGameObject);
+                else if (EditorApplication.isPlaying && !mvGameObject.IsPrefab)
                 {
                     Debug.LogError($"{mvGameObject.name} has no Multiverse Id! It needs to be resaved!");
                     EditorApplication.isPlaying = false;
-#endif
                 }
+#endif
             }
         }
 
 
 #if UNITY_EDITOR
-        [PostProcessScene]
+        [PostProcessScene(0)]
         public static void OnPostProcessScene()
         {
-            // Run this mainly just to check for duplicate ids
             LoadCurrentIds();
         }
 
@@ -108,9 +124,35 @@ namespace Multiverse.Utils
         }
 #endif
 
-        public static uint GenerateNextInstanceId(MvGameObject gameObject)
+        public static uint AllocateInstanceId(MvGameObject gameObject)
         {
-            return GenerateNextId(Instances, gameObject);
+            // Just use an incrementing uint for this instead of checking the dictionary
+            // It's faster, and won't ever re-use ids that might get desynced on client/server
+            _lastInstanceId++;
+            Instances[_lastInstanceId] = gameObject;
+            return _lastInstanceId;
+        }
+
+        public static void RegisterInstanceId(MvGameObject gameObject)
+        {
+            Instances[gameObject.Id] = gameObject;
+        }
+
+        public static void UnregisterInstanceId(MvGameObject gameObject)
+        {
+            Instances.Remove(gameObject.Id);
+        }
+
+        public static uint AllocateMatchId()
+        {
+            _lastMatchId++;
+            return _lastMatchId;
+        }
+        
+        public static uint AllocatePlayerId()
+        {
+            _lastPlayerId++;
+            return _lastPlayerId;
         }
 
         public static MvGameObject GetSceneObject(byte sceneId, uint id)
@@ -121,6 +163,21 @@ namespace Multiverse.Utils
         public static MvGameObject GetPrefab(uint id)
         {
             return Prefabs[id];
+        }
+
+        public static IEnumerable<MvGameObject> GetPrefabs()
+        {
+            return Prefabs.Values;
+        }
+
+        public static MvGameObject GetInstance(uint id)
+        {
+            return Instances[id];
+        }
+
+        public static IEnumerable<MvGameObject> GetInstances()
+        {
+            return Instances.Values;
         }
 
         public static byte GetSceneId(int buildIndex)

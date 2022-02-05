@@ -1,19 +1,20 @@
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Reaction;
-
 namespace Multiverse.LibraryInterfaces
 {
-    // TODO: Rename matches to rooms
     public interface IMvLibraryMatchmaker
     {
-        bool Connected { get; }
-        public RxnEvent OnDisconnected { get; }
+        Connected Connected { set; }
+        Disconnected Disconnected { set; }
+        Connected ConnectedToMatch { set; }
         
-        Task Connect();
-        Task Disconnect();
-        Task CreateMatch(string matchName = null, int maxPlayers = int.MaxValue);
-        Task JoinMatch(MvMatch match);
-        Task<IEnumerable<MvMatch>> GetMatchList();
+        ErrorHandler HostMatchError { set; }
+        ErrorHandler JoinMatchError { set; }
+        
+        MatchesUpdated MatchesUpdated { set; }
+        
+        void Connect();
+        void Disconnect();
+        void HostMatch(byte[] data);
+        void JoinMatch(int libId);
+        void UpdateMatchList();
     }
 }

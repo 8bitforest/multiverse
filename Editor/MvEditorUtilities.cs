@@ -20,7 +20,7 @@ namespace Multiverse
                 mvGameObject.ResetIds();
             MvIdManager.LoadCurrentIds();
             foreach (var mvGameObject in mvGameObjects)
-                mvGameObject.GenerateIds();
+                mvGameObject.OnValidate();
         }
     }
 }

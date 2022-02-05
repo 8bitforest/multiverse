@@ -1,7 +1,6 @@
-using System.Collections;
+using System.Threading.Tasks;
+using Multiverse.Tests.Assets.Scripts;
 using Multiverse.Tests.Base;
-using Multiverse.Tests.Extensions;
-using Multiverse.Utils;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 
@@ -9,9 +8,10 @@ namespace Multiverse.Tests
 {
     public abstract class MatchmakerTests : MultiverseTestFixture
     {
-        protected override IEnumerator UnityOneTimeSetUp()
+        [AsyncOneTimeSetUp]
+        protected async Task AsyncOneTimeSetUp()
         {
-            yield return new WaitForTask(NetworkManager.Matchmaker.Connect());
+            await NetworkManager.Matchmaker.Connect<TestMatchData>();
         }
 
         [Test]
@@ -26,16 +26,13 @@ namespace Multiverse.Tests
             Assert.True(NetworkManager.Matchmaker.Connected);
         }
 
-        [UnityTest]
-        public IEnumerator MatchmakerDisconnectsConnects()
+        [AsyncTest]
+        public async Task MatchmakerDisconnectsConnects()
         {
-                yield return new WaitForTask(async () =>
-            {
-                await NetworkManager.Matchmaker.Disconnect();
-                Assert.False(NetworkManager.Matchmaker.Connected);
-                await NetworkManager.Matchmaker.Connect();
-                Assert.True(NetworkManager.Matchmaker.Connected);
-            });
+            await NetworkManager.Matchmaker.Disconnect();
+            Assert.False(NetworkManager.Matchmaker.Connected);
+            await NetworkManager.Matchmaker.Connect<TestMatchData>();
+            Assert.True(NetworkManager.Matchmaker.Connected);
         }
     }
 }

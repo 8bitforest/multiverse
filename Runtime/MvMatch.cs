@@ -2,39 +2,36 @@ namespace Multiverse
 {
     public class MvMatch
     {
-        public string Name { get; private set; }
-        public string Id { get; private set; }
-        public int MaxPlayers { get; private set; }
+        public uint Id { get; }
+        public string Name => Data.Name;
+        public int MaxPlayers => Data.MaxPlayers;
+        internal int LibId { get; }
 
-        public MvMatch(string name, string id, int maxPlayers)
+        internal MultiverseMatchData Data { get; }
+        internal IMvMatchData CustomData { get; }
+
+        internal MvMatch(uint id, int libId, MultiverseMatchData data, IMvMatchData customData)
         {
-            Name = name;
             Id = id;
-            MaxPlayers = maxPlayers;
+            Data = data;
+            CustomData = customData;
+            LibId = libId;
         }
 
-        private bool Equals(MvMatch other)
+        public T GetCustomData<T>() where T : IMvMatchData
         {
-            return Name == other.Name && Id == other.Id && MaxPlayers == other.MaxPlayers;
+            return (T) CustomData;
         }
 
-        public override bool Equals(object obj)
+        public override string ToString()
         {
-            if (ReferenceEquals(null, obj)) return false;
-            if (ReferenceEquals(this, obj)) return true;
-            if (obj.GetType() != GetType()) return false;
-            return Equals((MvMatch) obj);
+            return $"[{Id}] {Name}";
         }
+    }
 
-        public override int GetHashCode()
-        {
-            unchecked
-            {
-                var hashCode = (Name != null ? Name.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ (Id != null ? Id.GetHashCode() : 0);
-                hashCode = (hashCode * 397) ^ MaxPlayers;
-                return hashCode;
-            }
-        }
+    public struct MultiverseMatchData : IMvMatchData
+    {
+        public string Name { get; set; }
+        public int MaxPlayers { get; set; }
     }
 }

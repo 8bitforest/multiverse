@@ -1,8 +1,6 @@
-using System.Collections;
 using System.Linq;
+using System.Threading.Tasks;
 using Multiverse.Tests.Base;
-using Multiverse.Tests.Extensions;
-using Multiverse.Utils;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 
@@ -10,11 +8,11 @@ namespace Multiverse.Tests
 {
     public abstract class ClientJoinedTests : MultiverseTestFixture
     {
-        protected override IEnumerator UnityOneTimeSetUp()
+        [AsyncOneTimeSetUp]
+        public async Task UnityOneTimeSetUp()
         {
-            StartTestServer();
-            yield return WaitForTestServer();
-            yield return new WaitForTask(JoinServerMatch());
+            await StartTestServer();
+            await JoinServerMatch();
         }
 
         [Test]
@@ -26,34 +24,35 @@ namespace Multiverse.Tests
             Assert.Null(NetworkManager.Server);
             Assert.NotNull(NetworkManager.Client);
             Assert.Null(NetworkManager.Host);
-            Assert.GreaterOrEqual(NetworkManager.Client.Connections.Count, 1);
+            Assert.AreEqual(2, NetworkManager.Client.Players.Count);
 
-            Assert.NotNull(NetworkManager.Client.LocalConnection);
-            Assert.False(NetworkManager.Client.LocalConnection.IsHost);
-            Assert.True(NetworkManager.Client.LocalConnection.IsLocal);
+            Assert.NotNull(NetworkManager.Client.LocalPlayer);
+            Assert.False(NetworkManager.Client.LocalPlayer.IsHost);
+            Assert.True(NetworkManager.Client.LocalPlayer.IsLocal);
         }
 
-        [UnityTest]
-        public IEnumerator OnDisconnectCalled()
+        [AsyncTest]
+        public async Task OnDisconnectCalled()
         {
-            var onDisconnectedCalled = AssertExtensions.EventCalled(NetworkManager.OnDisconnected);
-            StopTestServer();
-            yield return onDisconnectedCalled;
+            var onDisconnectedCalled = NetworkManager.OnDisconnected.Wait(60);//)Multiverse.Timeout);
+            await KillTestServer();
+            await onDisconnectedCalled;
 
-            yield return new WaitUntilTimeout(() => NetworkManager.Matchmaker.Matches.Count == 0);
+            Assert.False(NetworkManager.IsConnected);
+            Assert.AreEqual(0, NetworkManager.Matchmaker.Matches.Count);
 
-            StartTestServer();
-            yield return WaitForTestServer();
-            yield return new WaitForTask(JoinServerMatch());
+            await StartTestServer();
+            await WaitForTestServer();
+            await JoinServerMatch();
         }
 
-        [UnityTest]
-        public IEnumerator OtherClientConnects()
+        [AsyncTest]
+        public async Task OtherClientConnects()
         {
-            StartTestClient();
-            yield return new WaitUntilTimeout(() => NetworkManager.Client.Connections.Count > 2);
-            Assert.AreEqual(2, NetworkManager.Client.OtherConnections.Count());
-            var otherClients = NetworkManager.Client.OtherConnections.ToArray();
+            await StartTestClient();
+            Assert.AreEqual(3, NetworkManager.Client.Players.Count);
+            Assert.AreEqual(2, NetworkManager.Client.OtherPlayers.Count());
+            var otherClients = NetworkManager.Client.OtherPlayers.ToArray();
             var hostClient = otherClients.FirstOrDefault(c => c.IsHost);
             var otherClient = otherClients.FirstOrDefault(c => !Equals(c, hostClient));
             Assert.NotNull(hostClient);
@@ -62,12 +61,12 @@ namespace Multiverse.Tests
             Assert.NotNull(otherClient);
             Assert.False(otherClient.IsLocal);
             Assert.False(otherClient.IsHost);
-            Assert.AreNotEqual(hostClient.Id, NetworkManager.Client.LocalConnection.Id);
-            Assert.AreNotEqual(otherClient.Id, NetworkManager.Client.LocalConnection.Id);
+            Assert.AreNotEqual(hostClient.Id, NetworkManager.Client.LocalPlayer.Id);
+            Assert.AreNotEqual(otherClient.Id, NetworkManager.Client.LocalPlayer.Id);
 
-            StopTestClients();
-            yield return new WaitUntilTimeout(() => NetworkManager.Client.Connections.Count == 2, 45);
-            Assert.AreEqual(1, NetworkManager.Client.OtherConnections.Count());
+            await KillTestClients();
+            Assert.AreEqual(2, NetworkManager.Client.Players.Count);
+            Assert.AreEqual(1, NetworkManager.Client.OtherPlayers.Count());
         }
     }
 }

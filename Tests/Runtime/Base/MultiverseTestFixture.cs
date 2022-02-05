@@ -1,14 +1,16 @@
-using System.Collections;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Multiverse.Tests.Assets.Scripts;
 using Multiverse.Tests.Utils;
-using Multiverse.Utils;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Debug = UnityEngine.Debug;
+using Object = UnityEngine.Object;
 
 namespace Multiverse.Tests.Base
 {
@@ -16,11 +18,10 @@ namespace Multiverse.Tests.Base
     {
         protected MvNetworkManager NetworkManager { get; private set; }
         protected MultiverseTestManager TestManager { get; private set; }
+        protected MultiverseTestObjects TestObjects { get; private set; }
 
-        private HashSet<Process> _clientProcesses = new HashSet<Process>();
+        private readonly HashSet<Process> _clientProcesses = new HashSet<Process>();
         private Process _serverProcess;
-
-        #region SetUp/TearDown methods
 
         [OneTimeSetUp]
         public void OneTimeSetUpBase()
@@ -28,79 +29,44 @@ namespace Multiverse.Tests.Base
             TestManager = Object.FindObjectOfType<MultiverseTestManager>();
             TestManager.AddNetworkLibrary();
             NetworkManager = MvNetworkManager.I;
-            OneTimeSetUp();
+            TestObjects = Resources.Load<MultiverseTestObjects>("MultiverseTestObjects");
         }
 
-        [UnityOneTimeSetUp]
-        public IEnumerator UnityOneTimeSetUpBase()
+        [AsyncOneTimeTearDown]
+        public async Task AsyncOneTimeTearDownBase()
         {
-            yield return UnityOneTimeSetUp();
-        }
+            if (NetworkManager.IsConnected && NetworkManager.IsHost)
+                await NetworkManager.Host.Disconnect();
+            else if (NetworkManager.IsConnected && NetworkManager.IsClient)
+                await NetworkManager.Client.Disconnect();
 
-        [SetUp]
-        public void SetUpBase()
-        {
-            SetUp();
-        }
+            if (NetworkManager.Matchmaker.Connected)
+                await NetworkManager.Matchmaker.Disconnect();
 
-        [UnitySetUp]
-        public IEnumerator UnitySetUpBase()
-        {
-            yield return UnitySetUp();
+            await KillTestClients();
+            await KillTestServer();
         }
 
         [TearDown]
-        public void TearDownBase()
+        public void TearDown()
         {
-            NetworkManager.ClearAllMessageReceivers();
-            TearDown();
+            if (NetworkManager.HasClient)
+                NetworkManager.Client.ClearMessageReceivers();
+            if (NetworkManager.HasServer)
+                NetworkManager.Server.ClearMessageReceivers();
         }
 
-        [UnityTearDown]
-        public IEnumerator UnityTearDownBase()
+        protected async Task StartTestClient()
         {
-            yield return UnityTearDown();
-        }
-
-        [OneTimeTearDown]
-        public void OneTimeTearDownBase()
-        {
-            StopTestClients();
-            StopTestServer();
-            OneTimeTearDown();
-        }
-
-        [UnityOneTimeTearDown]
-        public IEnumerator UnityOneTimeTearDownBase()
-        {
-            if (NetworkManager.IsConnected && NetworkManager.IsHost)
-                yield return new WaitForTask(NetworkManager.Host.Disconnect());
-            else if (NetworkManager.IsConnected && NetworkManager.IsClient)
-                yield return new WaitForTask(NetworkManager.Client.Disconnect());
-            if (NetworkManager.Matchmaker.Connected)
-                yield return new WaitForTask(NetworkManager.Matchmaker.Disconnect());
-            yield return UnityOneTimeTearDown();
-        }
-
-        protected virtual void OneTimeSetUp() { }
-        protected virtual IEnumerator UnityOneTimeSetUp() => null;
-        protected virtual void SetUp() { }
-        protected virtual IEnumerator UnitySetUp() => null;
-        protected virtual void TearDown() { }
-        protected virtual IEnumerable UnityTearDown() => null;
-        protected virtual void OneTimeTearDown() { }
-        protected virtual IEnumerator UnityOneTimeTearDown() => null;
-
-        #endregion
-
-        protected void StartTestClient()
-        {
+            var currentClients = NetworkManager.Client.Players.Count;
             _clientProcesses.Add(StartTestBinary("-client"));
+            await WaitUntil(() => NetworkManager.Client.Players.Count == currentClients + 1);
         }
 
-        protected void StartTestServer()
+        protected async Task StartTestServer()
         {
             _serverProcess = StartTestBinary("-server");
+            await WaitForTestServer();
         }
 
         private Process StartTestBinary(string arg)
@@ -114,41 +80,63 @@ namespace Multiverse.Tests.Base
             return Process.Start(path, $"-batchmode {arg}");
         }
 
-        protected void StopTestServer()
+        protected async Task KillTestServer()
         {
             _serverProcess?.Kill();
+            await WaitUntil(() => !NetworkManager.Connected, 60);
         }
 
-        protected void StopTestClients()
+        protected async Task KillTestClients()
         {
+            if (_clientProcesses == null)
+                return;
+
             foreach (var p in _clientProcesses)
                 p.Kill();
+
+            if (NetworkManager.HasClient)
+            {
+                var targetPlayers = NetworkManager.Client.Players.Count - _clientProcesses.Count;
+                await WaitUntil(() => NetworkManager.Client.Players.Count <= targetPlayers, 60);
+            }
+
             _clientProcesses.Clear();
         }
 
-        protected IEnumerator WaitForTestServer()
+        protected async Task WaitForTestServer()
         {
-            yield return new WaitForTask(NetworkManager.Matchmaker.Connect());
-            yield return new WaitUntilTimeout(() =>
-                NetworkManager.Matchmaker.Matches.Any(m => m.Name == "Test Server"), 15);
+            await NetworkManager.Matchmaker.Connect<TestMatchData>();
+            await WaitUntil(() => FindServerMatch() != null);
         }
 
         protected async Task HostServerMatch()
         {
-            await NetworkManager.Matchmaker.CreateMatch("Test Server", 4);
+            await NetworkManager.Matchmaker.HostMatch(MultiverseTestConstants.MatchName, 4, TestMatchData.Create());
         }
 
         protected async Task JoinServerMatch()
         {
-            var match = await FindServerMatch();
+            var match = FindServerMatch();
             await NetworkManager.Matchmaker.JoinMatch(match);
         }
 
-        protected async Task<MvMatch> FindServerMatch()
+        protected MvMatch FindServerMatch()
         {
-            var matches = (await NetworkManager.Matchmaker.GetMatchList()).ToArray();
-            Assert.IsNotEmpty(matches);
-            return matches.FirstOrDefault(m => m.Name == "Test Server");
+            var matches = NetworkManager.Matchmaker.Matches.Values.ToArray();
+            return matches.FirstOrDefault(m => m.Name == MultiverseTestConstants.MatchName);
+        }
+
+        protected async Task WaitUntil(Func<bool> predicate, float timeout = Multiverse.Timeout)
+        {
+            var stopwatch = new Stopwatch();
+            stopwatch.Start();
+            while (!predicate())
+            {
+                if (stopwatch.ElapsedMilliseconds > timeout * 1000)
+                    Assert.Fail("WaitUntil timed out");
+
+                await Task.Delay(50);
+            }
         }
     }
 }

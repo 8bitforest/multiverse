@@ -3,29 +3,29 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Multiverse.LibraryInterfaces;
+using Multiverse.Messages;
 using Multiverse.Messaging;
+using Multiverse.Serialization;
 using Reaction;
+using UnityEngine;
 
 namespace Multiverse
 {
     public class MvClient
     {
-        public bool Connected { get; private set; } = true;
-        public MvConnection LocalConnection => _client.LocalConnection;
-        public RxnDictionary<int, MvConnection> Connections => _client.Connections;
-
-        public IEnumerable<MvConnection> OtherConnections => Connections.Values
-            .Select(v => v.Value)
-            .Where(c => !Equals(c, LocalConnection));
-
-        public RxnEvent OnDisconnected { get; }
+        public RxnValue<bool> Connected { get; }
+        public MvPlayer LocalPlayer { get; private set; }
+        public RxnDictionary<uint, MvPlayer> Players { get; }
+        public IEnumerable<MvPlayer> OtherPlayers => Players.Values.Where(c => !Equals(c, LocalPlayer));
 
         private readonly IMvLibraryClient _client;
         private readonly MvBinaryWriter _writer;
         private readonly MvBinaryReader _reader;
 
-        private static readonly Dictionary<byte, MvMessageReceiverManager> ReceiverManagers =
-            new Dictionary<byte, MvMessageReceiverManager>();
+        private static readonly Dictionary<byte, IMvMessageReceivers> Receivers =
+            new Dictionary<byte, IMvMessageReceivers>();
+
+        private readonly Dictionary<int, MvPlayer> _libIdPlayers = new Dictionary<int, MvPlayer>();
 
         public MvClient(IMvLibraryClient client)
         {
@@ -33,53 +33,84 @@ namespace Multiverse
             _writer = new MvBinaryWriter();
             _reader = new MvBinaryReader();
 
-            OnDisconnected = _client.OnDisconnected;
-            OnDisconnected.OnInvoked(null, () => Connected = false);
+            Connected = new RxnValue<bool>();
+            Players = new RxnDictionary<uint, MvPlayer>();
 
-            _client.SetMessageReceiver(ReceiveMessage);
+            _client.Disconnected = () => Connected.AsOwner.Set(false);
+            _client.MessageReceiver = ReceiveMessage;
+
+            AddMessageReceiver<MvExistingPlayersMessage>(ExistingPlayers);
+            AddMessageReceiver<MvPlayerConnectedMessage>(PlayerConnected);
+            AddMessageReceiver<MvPlayerDisconnectedMessage>(PlayerDisconnected);
         }
 
-        public async Task Disconnect() => await _client.Disconnect();
-
-        public static void AddMessageReceiver<T>(Action<T> receiver) where T : IMvNetworkMessage
+        public async Task Disconnect()
         {
-            AddMessageReceiver<T>((_, msg) => receiver(msg));
+            if (Connected)
+                _client.Disconnect();
+            await Connected.WaitUntil(false, Multiverse.Timeout);
         }
 
-        public static void AddMessageReceiver<T>(MessageReceiver<T> receiver) where T : IMvNetworkMessage
+        public void AddMessageReceiver<T>(Action receiver) where T : IMvMessage
+        {
+            AddMessageReceiver<T>(_ => receiver());
+        }
+
+        public void AddMessageReceiver<T>(Action<T> receiver) where T : IMvMessage
         {
             var id = MvMessageTypes.GetIdForType(typeof(T));
-            if (!ReceiverManagers.ContainsKey(id))
-                ReceiverManagers[id] = MvMessageReceiverManager.Create<T, MvClient>();
+            if (!Receivers.ContainsKey(id))
+                Receivers[id] = new MvMessageReceivers<T>();
 
-            MvMessageReceiverManager.AddReceiver<T, MvClient>(receiver);
+            Receivers[id].Add<T>((p, m) => receiver(m));
         }
 
-        public static void RemoveMessageReceiver<T>(MessageReceiver<T> receiver) where T : IMvNetworkMessage
+        public void SendMessageToServer<T>(T message, bool reliable = true) where T : IMvMessage
         {
-            MvMessageReceiverManager.RemoveReceiver<T, MvClient>(receiver);
-        }
-
-        public void SendMessageToServer<T>(T message, bool reliable = true) where T : IMvNetworkMessage
-        {
+            Debug.Log($"[SR] >>> Client Send: {typeof(T)}");
             _writer.Reset();
             _writer.WriteByte(MvMessageTypes.GetIdForType(typeof(T)));
             _writer.Write(message);
             _client.SendMessageToServer(_writer.GetData(), reliable);
         }
 
-        private void ReceiveMessage(MvConnection connection, ArraySegment<byte> message)
+        private void ReceiveMessage(ArraySegment<byte> message)
         {
             _reader.Reset(message);
             var type = _reader.ReadByte();
-            if (ReceiverManagers.ContainsKey(type))
-                ReceiverManagers[type].CallReceivers(connection, _reader);
+            Debug.Log($"[SR] <<< Client Recv: {MvMessageTypes.GetTypeForId(type)}");
+            if (Receivers.ContainsKey(type))
+                Receivers[type].Call(null, _reader);
         }
 
-        internal static void ClearMessageReceivers()
+        public void ClearMessageReceivers()
         {
-            foreach (var manager in ReceiverManagers.Values)
-                manager.ClearReceivers();
+            foreach (var receivers in Receivers.Values)
+                receivers.Clear();
+        }
+
+        private void ExistingPlayers(MvExistingPlayersMessage msg)
+        {
+            foreach (var player in msg.Players)
+                PlayerConnected(player);
+
+            Connected.AsOwner.Set(true);
+        }
+
+        private void PlayerConnected(MvPlayerConnectedMessage msg)
+        {
+            var player = new MvPlayer(msg.Id, msg.LibId, msg.IsHost, msg.IsLocal);
+            if (player.IsLocal)
+                LocalPlayer = player;
+
+            _libIdPlayers[player.LibId] = player;
+            Players.AsOwner[player.Id] = player;
+        }
+
+        private void PlayerDisconnected(MvPlayerDisconnectedMessage msg)
+        {
+            _libIdPlayers.Remove(Players[msg.Id].Value.LibId);
+            Players.AsOwner.Remove(msg.Id);
         }
     }
 }

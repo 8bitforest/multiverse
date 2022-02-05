@@ -1,19 +1,17 @@
 using System;
-using System.Threading.Tasks;
-using Multiverse.Messaging;
-using Reaction;
 
 namespace Multiverse.LibraryInterfaces
 {
     public interface IMvLibraryServer
     {
-        RxnDictionary<int, MvConnection> Clients { get; }
-        
-        RxnEvent OnDisconnected { get; }
+        Disconnected Disconnected { set; }
+        ServerByteMessageReceiver MessageReceiver { set; }
+        PlayerConnected PlayerConnected { set; }
+        PlayerDisconnected PlayerDisconnected { set; }
 
-        Task Disconnect();
-        void SetMessageReceiver(ByteMessageReceiver receiver);
-        void SendMessageToClient(MvConnection connection, ArraySegment<byte> message, bool reliable);
+        void Disconnect();
+        
+        void SendMessageToPlayer(int libId, ArraySegment<byte> message, bool reliable);
         void SendMessageToAll(ArraySegment<byte> message, bool reliable);
     }
 }
