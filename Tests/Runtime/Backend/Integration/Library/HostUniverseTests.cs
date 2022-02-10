@@ -1,9 +1,11 @@
-using Multiverse.Tests.Base;
+using Multiverse.Tests.Backend.Base;
+using Multiverse.Tests.Backend.Utils;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace Multiverse.Tests
+namespace Multiverse.Tests.Backend.Integration.Library
 {
+    [MultiverseBackendFixture]
     public abstract class HostUniverseTests : MultiverseHostFixture
     {
         [Test]

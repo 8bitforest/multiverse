@@ -5,14 +5,13 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Multiverse.Tests.Assets.Scripts;
-using Multiverse.Tests.Utils;
+using Multiverse.Tests.Backend.Utils;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
-using Debug = UnityEngine.Debug;
 using Object = UnityEngine.Object;
 
-namespace Multiverse.Tests.Base
+namespace Multiverse.Tests.Backend.Base
 {
     public abstract class MultiverseTestFixture
     {
@@ -126,7 +125,7 @@ namespace Multiverse.Tests.Base
             return matches.FirstOrDefault(m => m.Name == MultiverseTestConstants.MatchName);
         }
 
-        protected async Task WaitUntil(Func<bool> predicate, float timeout = Multiverse.Timeout)
+        protected async Task WaitUntil(Func<bool> predicate, float timeout = global::Multiverse.Multiverse.Timeout)
         {
             var stopwatch = new Stopwatch();
             stopwatch.Start();

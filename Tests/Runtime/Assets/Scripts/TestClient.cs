@@ -4,6 +4,7 @@ using UnityEngine;
 
 namespace Multiverse.Tests.Assets.Scripts
 {
+    [RequireComponent(typeof(MultiverseTests))]
     public class TestClient : MonoBehaviour
     {
         private MvNetworkManager _networkManager;
@@ -12,7 +13,7 @@ namespace Multiverse.Tests.Assets.Scripts
         private void Start()
         {
             _networkManager = FindObjectOfType<MvNetworkManager>();
-            _testObjects = Resources.Load<MultiverseTestObjects>("MultiverseTestObjects");
+            _testObjects = GetComponent<MultiverseTests>().TestObjects;
             JoinServer();
         }
 

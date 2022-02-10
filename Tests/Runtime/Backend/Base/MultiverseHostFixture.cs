@@ -2,18 +2,16 @@ using System.Threading.Tasks;
 using Multiverse.Tests.Assets.Scripts;
 using UnityEngine.TestTools;
 
-namespace Multiverse.Tests.Base
+namespace Multiverse.Tests.Backend.Base
 {
-    public abstract class MultiverseClientFixture : MultiverseTestFixture
+    public abstract class MultiverseHostFixture : MultiverseTestFixture
     {
         [AsyncOneTimeSetUp]
         public async Task AsyncOneTimeSetUp()
         {
             await NetworkManager.Matchmaker.Connect<TestMatchData>();
-            await StartTestServer();
-            await JoinServerMatch();
+            await HostServerMatch();
             await StartTestClient();
-            // TODO: Wait for other client to join?
         }
     }
 }

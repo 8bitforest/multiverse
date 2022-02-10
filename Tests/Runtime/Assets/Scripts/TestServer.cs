@@ -3,13 +3,16 @@ using UnityEngine;
 
 namespace Multiverse.Tests.Assets.Scripts
 {
+    [RequireComponent(typeof(MultiverseTests))]
     public class TestServer : MonoBehaviour
     {
         private MvNetworkManager _networkManager;
+        private MultiverseTestObjects _testObjects;
 
         private void Start()
         {
             _networkManager = FindObjectOfType<MvNetworkManager>();
+            _testObjects = GetComponent<MultiverseTests>().TestObjects;
             StartServer();
         }
 

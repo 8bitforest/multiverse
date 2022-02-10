@@ -2,18 +2,19 @@ using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace Multiverse.Tests.Utils
+namespace Multiverse.Tests.Backend.Utils
 {
-    public abstract class MultiverseTestSetUp<T> where T : IMvTestLibraryAdder, new()
+    public abstract class MultiverseTestSetUp<T> where T : IMvLibraryTestSuite, new()
     {
         private HashSet<GameObject> _originalObjects = new HashSet<GameObject>();
 
         [OneTimeSetUp]
         public void OneTimeSetUp()
         {
-            Debug.Log("Setting up tests");
+            // TODO: Does this run for every test???
+            Debug.Log($"Setting up tests for {new T().Name}");
             _originalObjects = new HashSet<GameObject>(Resources.FindObjectsOfTypeAll<GameObject>());
-            new GameObject("TestManager").AddComponent<MultiverseTestManager>().SetLibraryAdder(new T());
+            new GameObject("TestManager").AddComponent<MultiverseTestManager>().SetSuite(new T());
         }
 
         [OneTimeTearDown]

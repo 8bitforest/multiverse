@@ -1,12 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Multiverse.Messaging;
 using Multiverse.Serialization;
 using NUnit.Framework;
 using UnityEngine;
 
-namespace Multiverse.Tests
+namespace Multiverse.Tests.Multiverse.Unit
 {
     [TestFixture]
     public class BinaryReaderWriter

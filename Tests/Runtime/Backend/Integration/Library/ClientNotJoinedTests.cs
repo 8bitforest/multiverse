@@ -1,12 +1,13 @@
 using System.Threading.Tasks;
 using Multiverse.Tests.Assets.Scripts;
-using Multiverse.Tests.Base;
+using Multiverse.Tests.Backend.Base;
+using Multiverse.Tests.Backend.Utils;
 using NUnit.Framework;
-using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Multiverse.Tests
+namespace Multiverse.Tests.Backend.Integration.Library
 {
+    [MultiverseBackendFixture]
     public abstract class ClientNotJoinedTests : MultiverseTestFixture
     {
         [AsyncOneTimeSetUp]
@@ -55,7 +56,7 @@ namespace Multiverse.Tests
         [AsyncTest]
         public async Task JoinsLeavesMatch()
         {
-            var onConnectedCalled = NetworkManager.OnConnected.Wait(Multiverse.Timeout);
+            var onConnectedCalled = NetworkManager.OnConnected.Wait(global::Multiverse.Multiverse.Timeout);
             await JoinServerMatch();
             Assert.True(NetworkManager.IsConnected);
             Assert.True(NetworkManager.IsClient);
@@ -66,7 +67,7 @@ namespace Multiverse.Tests
             Assert.AreEqual(2, NetworkManager.Client.Players.Count);
             await onConnectedCalled;
 
-            var onDisconnectedCalled = NetworkManager.OnDisconnected.Wait(Multiverse.Timeout);
+            var onDisconnectedCalled = NetworkManager.OnDisconnected.Wait(global::Multiverse.Multiverse.Timeout);
             await NetworkManager.Client.Disconnect();
             Assert.False(NetworkManager.IsConnected);
             Assert.False(NetworkManager.IsClient);

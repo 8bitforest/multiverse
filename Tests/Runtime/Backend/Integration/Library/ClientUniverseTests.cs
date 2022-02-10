@@ -1,12 +1,14 @@
 using System.Threading.Tasks;
-using Multiverse.Tests.Base;
+using Multiverse.Tests.Backend.Base;
+using Multiverse.Tests.Backend.Utils;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
 
-namespace Multiverse.Tests
+namespace Multiverse.Tests.Backend.Integration.Library
 {
     // TODO: Make sure existing objects are sent to client
+    [MultiverseBackendFixture]
     public abstract class ClientUniverseTests : MultiverseClientFixture
     {
         [Test]

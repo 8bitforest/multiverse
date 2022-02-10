@@ -2,7 +2,8 @@
     "name": "8BitForest.Multiverse.Editor",
     "rootNamespace": "Multiverse",
     "references": [
-        "GUID:1f77266d5a71843aa87d69a8a280bce5"
+        "GUID:1f77266d5a71843aa87d69a8a280bce5",
+        "GUID:521afff039b264ddb8f24c5dc56a3bc4"
     ],
     "includePlatforms": [
         "Editor"

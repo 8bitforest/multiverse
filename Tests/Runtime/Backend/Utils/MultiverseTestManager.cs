@@ -1,16 +1,16 @@
 using UnityEngine;
 
-namespace Multiverse.Tests.Utils
+namespace Multiverse.Tests.Backend.Utils
 {
     public class MultiverseTestManager : MonoBehaviour
     {
-        private IMvTestLibraryAdder _adder;
+        private IMvLibraryTestSuite _suite;
 
         private GameObject _libraryGameObject;
 
-        public void SetLibraryAdder(IMvTestLibraryAdder adder)
+        public void SetSuite(IMvLibraryTestSuite suite)
         {
-            _adder = adder;
+            _suite = suite;
         }
 
         public void AddNetworkLibrary()
@@ -19,14 +19,9 @@ namespace Multiverse.Tests.Utils
                 DestroyImmediate(_libraryGameObject);
 
             _libraryGameObject = new GameObject("Network Library");
-            _adder.AddLibrary(_libraryGameObject);
+            _suite.AddLibrary(_libraryGameObject);
             var nm = _libraryGameObject.AddComponent<MvNetworkManager>();
             nm.SetTimeout(5);
         }
-    }
-
-    public interface IMvTestLibraryAdder
-    {
-        void AddLibrary(GameObject gameObject);
     }
 }

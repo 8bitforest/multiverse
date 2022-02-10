@@ -25,12 +25,14 @@ namespace Multiverse.Tests
                 BuildTestBinary(lib, lib.ToUpper());
 
             foreach (var lib in libraries)
-                Debug.Log($"Built test binary for library {lib}");
+                Debug.Log($"Built test binary for library {lib} in {Application.temporaryCachePath}");
+            
         }
 
         private static void BuildTestBinary(string backend, string define)
         {
             var path = Path.Combine(Application.temporaryCachePath, $"MultiverseTest{backend}");
+            
             BuildPipeline.BuildPlayer(new BuildPlayerOptions
             {
                 locationPathName = path,

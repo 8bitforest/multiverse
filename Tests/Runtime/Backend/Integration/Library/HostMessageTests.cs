@@ -2,12 +2,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Multiverse.Tests.Assets.Scripts;
-using Multiverse.Tests.Base;
+using Multiverse.Tests.Backend.Base;
+using Multiverse.Tests.Backend.Utils;
 using NUnit.Framework;
 using UnityEngine.TestTools;
 
-namespace Multiverse.Tests
+namespace Multiverse.Tests.Backend.Integration.Library
 {
+    [MultiverseBackendFixture]
     public abstract class HostMessageTests : MultiverseHostFixture
     {
         [AsyncTest]
